@@ -7,11 +7,35 @@
 
 #include <string.h>
 
+void readN(size_t size, char* buffer, int sockId)
+{
+    size_t curPos = 0;
+    ssize_t n;
+    size_t tmpBufSize = 255;
+    char tmp[tmpBufSize];
+
+    while (curPos<size)
+    {
+        if (size - curPos < tmpBufSize)
+            tmpBufSize = size - curPos;
+        bzero(tmp, size);
+        n = read(sockId, tmp, tmpBufSize); // recv on Windows
+        if (n < 0)
+        {
+            perror("ERROR reading from socket");
+            exit(1);
+        }
+        for (size_t i = 0; i<tmpBufSize; i++)
+            buffer[i+curPos] = tmp[i];
+        curPos = curPos + tmpBufSize;
+    }
+}
+
 int main(int argc, char *argv[]) {
     int sockfd, newsockfd;
     uint16_t portno;
     unsigned int clilen;
-    char buffer[256];
+    char buffer[8192];
     struct sockaddr_in serv_addr, cli_addr;
     ssize_t n;
 
@@ -53,13 +77,7 @@ int main(int argc, char *argv[]) {
     }
 
     /* If connection is established then start communicating */
-    bzero(buffer, 256);
-    n = read(newsockfd, buffer, 255); // recv on Windows
-
-    if (n < 0) {
-        perror("ERROR reading from socket");
-        exit(1);
-    }
+    readN(8192, buffer, newsockfd);
 
     printf("Here is the message: %s\n", buffer);
 
@@ -70,6 +88,9 @@ int main(int argc, char *argv[]) {
         perror("ERROR writing to socket");
         exit(1);
     }
+
+    shutdown(sockfd, 2);
+    close(sockfd);
 
     return 0;
 }

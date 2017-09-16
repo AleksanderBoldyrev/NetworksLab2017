@@ -73,6 +73,9 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    shutdown(sockfd, 2);
+    close(sockfd);
+
     printf("%s\n", buffer);
     return 0;
 }
