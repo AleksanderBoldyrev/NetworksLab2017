@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-int readn(int sfd, char* const data, size_t* size)
+int readN(int sfd, char* const data, size_t* size)
 {
     ssize_t n;
     size_t total = 0;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 
     /* Now read server response */
     size_t limit = 255;
-    if(0 != readn(sockfd, buffer, &limit))
+    if(0 != readN(sockfd, buffer, &limit))
     {
         fprintf(stderr, "%ld bytes were read, but recv() call failed:\n", limit);
         perror("");
