@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #include <string.h>
-
+/*
 int readN(int sfd, char* const data, size_t* size)
 {
     ssize_t n;
@@ -29,6 +29,22 @@ int readN(int sfd, char* const data, size_t* size)
 
     return -1 == n ? EXIT_FAILURE : EXIT_SUCCESS;
 }
+*/
+
+int readN(int sockfd, char *buffer, int nb){
+    int s;
+    int shift = 0;
+    for(int i = 0; i < nb; ++i){
+        s = read(sockfd, buffer + shift, 1);
+        shift += 1;
+        if (s < 0){
+            printf("Error while reading from socket \n");
+            exit(1);
+        }
+    }
+    return 0;
+}
+
 
 int main(int argc, char *argv[]) {
     int sockfd, n;
@@ -37,6 +53,7 @@ int main(int argc, char *argv[]) {
     struct hostent *server;
 
     char buffer[256];
+    char *b = buffer;
 
     if (argc < 3) {
         fprintf(stderr, "usage %s hostname port\n", argv[0]);
@@ -89,6 +106,7 @@ int main(int argc, char *argv[]) {
     }
 
     /* Now read server response */
+    /*
     size_t limit = 255;
     if(0 != readN(sockfd, buffer, &limit))
     {
@@ -96,6 +114,9 @@ int main(int argc, char *argv[]) {
         perror("");
         exit(1);
     }
+    */
+    bzero(buffer, 256);
+    readN(newsockfd, b, 255);
     
     shutdown(sockfd, 2); // 2 == SHUT_RD
     close(sockfd);
