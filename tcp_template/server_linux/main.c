@@ -75,6 +75,7 @@ int main(int argc, char *argv[]) {
     uint16_t portno;
     unsigned int clilen;
     char buffer[8192];
+    char *b = buffer;
     struct sockaddr_in serv_addr, cli_addr;
     ssize_t n;
 
@@ -120,13 +121,17 @@ int main(int argc, char *argv[]) {
 
     /* If connection is established then start communicating */
     //readN(8192, buffer, newsockfd);
-    size_t limit = 255;
+    /*size_t limit = 255;
     if(0 != readn(newsockfd, buffer, &limit))
     {
         fprintf(stderr, "%ld bytes were read, but recv() call failed:\n", limit);
         perror("");
         exit(1);
-    }
+    }*/
+    
+    bzero(buffer, 256);
+    readN(newsockfd, b, 255);
+    
     shutdown(newsockfd, SHUT_RD);
 
     printf("Here is the message: %s\n", buffer);
