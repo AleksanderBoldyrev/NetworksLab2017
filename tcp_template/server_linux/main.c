@@ -94,6 +94,9 @@ int main(int argc, char *argv[]) {
     /* Accept actual connection from the client */
     newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 
+    shutdown(sockfd, 2);
+    close(sockfd);
+    
     if (newsockfd < 0) {
         perror("ERROR on accept");
         exit(1);
@@ -121,8 +124,8 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    shutdown(sockfd, 2);
-    close(sockfd);
+    shutdown(newsockfd, 2);
+    close(newsockfd);
 
     return 0;
 }
