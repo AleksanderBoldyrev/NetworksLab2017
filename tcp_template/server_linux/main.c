@@ -30,6 +30,22 @@ int readN(int sfd, char* const data, size_t* size)
     return -1 == n ? EXIT_FAILURE : EXIT_SUCCESS;
 }
 
+/*
++int readN(int sockfd, char *buffer, int nb){
++    int s;
++    int shift = 0;
++    for(int i = 0; i < nb; ++i){
++        s = read(sockfd, buffer + shift, 1);
++        shift += 1;
++        if (s < 0){
++            printf("Error while reading from socket \n");
++            exit(1);
++        }
++    }
++    return 0;
++}
+*/
+
 /*void readN(size_t size, char* buffer, int sockId)
 {
     size_t curPos = 0;
