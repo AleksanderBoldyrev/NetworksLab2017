@@ -7,6 +7,29 @@
 
 #include <string.h>
 
+int readn(int sfd, char* const data, size_t* size)
+{
+    ssize_t n;
+    size_t total = 0;
+    size_t bytesleft = *size;
+
+    while(total < *size)
+    {
+        n = recv(sfd, data + total, bytesleft, MSG_NOSIGNAL);
+        if(-1 == n || 0 == n)
+        {
+            break;
+        }
+        total += n;
+        bytesleft -= n;
+    }
+
+    *size = total;
+    data[total] = '\0';
+
+    return -1 == n ? EXIT_FAILURE : EXIT_SUCCESS;
+}
+
 int main(int argc, char *argv[]) {
     int sockfd, n;
     uint16_t portno;
@@ -58,22 +81,23 @@ int main(int argc, char *argv[]) {
 
     /* Send message to the server */
     n = write(sockfd, buffer, strlen(buffer));
-
+    shutdown(sockfd, SHUT_WR);
+    
     if (n < 0) {
         perror("ERROR writing to socket");
         exit(1);
     }
 
     /* Now read server response */
-    bzero(buffer, 256);
-    n = read(sockfd, buffer, 255);
-
-    if (n < 0) {
-        perror("ERROR reading from socket");
+    size_t limit = 255;
+    if(0 != readn(sockfd, buffer, &limit))
+    {
+        fprintf(stderr, "%ld bytes were read, but recv() call failed:\n", limit);
+        perror("");
         exit(1);
     }
-
-    shutdown(sockfd, 2);
+    
+    shutdown(sockfd, 2); // 2 == SHUT_RD
     close(sockfd);
 
     printf("%s\n", buffer);
