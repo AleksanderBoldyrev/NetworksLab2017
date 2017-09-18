@@ -7,11 +7,75 @@
 
 #include <string.h>
 
+int readN(int sfd, char* const data, size_t* size)
+{
+    ssize_t n;
+    size_t total = 0;
+    size_t bytesleft = *size;
+
+    while(total < *size)
+    {
+        n = recv(sfd, data + total, bytesleft, MSG_NOSIGNAL);
+        if(-1 == n || 0 == n)
+        {
+            break;
+        }
+        total += n;
+        bytesleft -= n;
+    }
+
+    *size = total;
+    data[total] = '\0';
+
+    return -1 == n ? EXIT_FAILURE : EXIT_SUCCESS;
+}
+
+/*
+int readN(int sockfd, char *buffer, int nb){
+    int s;
+    int shift = 0;
+    for(int i = 0; i < nb; ++i){
+        s = read(sockfd, buffer + shift, 1);
+        shift += 1;
+        if (s < 0){
+            printf("Error while reading from socket \n");
+            exit(1);
+        }
+    }
+    return 0;
+}
+*/
+
+/*void readN(size_t size, char* buffer, int sockId)
+{
+    size_t curPos = 0;
+    ssize_t n;
+    size_t tmpBufSize = 255;
+    char tmp[tmpBufSize];
+
+    while (curPos<size)
+    {
+        if (size - curPos < tmpBufSize)
+            tmpBufSize = size - curPos;
+        bzero(tmp, size);
+        n = read(sockId, tmp, tmpBufSize); // recv on Windows
+        if (n < 0)
+        {
+            perror("ERROR reading from socket");
+            exit(1);
+        }
+        for (size_t i = 0; i<tmpBufSize; i++)
+            buffer[i+curPos] = tmp[i];
+        curPos = curPos + tmpBufSize;
+    }
+} */
+
 int main(int argc, char *argv[]) {
     int sockfd, newsockfd;
     uint16_t portno;
     unsigned int clilen;
-    char buffer[256];
+    char buffer[8192];
+    char *b = buffer;
     struct sockaddr_in serv_addr, cli_addr;
     ssize_t n;
 
@@ -47,29 +111,42 @@ int main(int argc, char *argv[]) {
     /* Accept actual connection from the client */
     newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 
+    shutdown(sockfd, 2);
+    close(sockfd);
+    
     if (newsockfd < 0) {
         perror("ERROR on accept");
         exit(1);
     }
 
     /* If connection is established then start communicating */
-    bzero(buffer, 256);
-    n = read(newsockfd, buffer, 255); // recv on Windows
-
-    if (n < 0) {
-        perror("ERROR reading from socket");
+    //readN(8192, buffer, newsockfd);
+    /*size_t limit = 255;
+    if(0 != readn(newsockfd, buffer, &limit))
+    {
+        fprintf(stderr, "%ld bytes were read, but recv() call failed:\n", limit);
+        perror("");
         exit(1);
-    }
+    }*/
+    
+    bzero(buffer, 256);
+    readN(newsockfd, b, 255);
+    
+    shutdown(newsockfd, SHUT_RD);
 
     printf("Here is the message: %s\n", buffer);
 
     /* Write a response to the client */
     n = write(newsockfd, "I got your message", 18); // send on Windows
+    shutdown(newsockfd, SHUT_WR);
 
     if (n < 0) {
         perror("ERROR writing to socket");
         exit(1);
     }
+
+    shutdown(newsockfd, 2);
+    close(newsockfd);
 
     return 0;
 }
