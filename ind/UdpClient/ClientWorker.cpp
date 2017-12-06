@@ -103,7 +103,6 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 	unsigned short numArgCount;
 	string* args = NULL;
 
-	bool isLogged = false;
 	string log;
 	string pass;
 	bool dr = false;
@@ -133,7 +132,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			{
 				if (numArgCount > 0 && args != NULL)
 				{
-					if (strcmp(args[0].c_str(), API[SERV_OK].c_str()) == 0)
+					if (atoi(args[0].c_str()) == SERV_OK)
 					{
 						cout << "Connected to server successfully." << endl;
 						state = INIT;
@@ -226,7 +225,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					{
 						if (numArgCount > 0 && args != NULL)
 						{
-							if (args[0].compare(API[SERV_OK]) == 0)
+							if (atoi(args[0].c_str()) == SERV_OK)
 							{
 								dr = true;
 								state = INIT;
@@ -279,7 +278,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					{
 						if (numArgCount > 0 && args != NULL)
 						{
-							if (args[0].compare(API[SERV_OK]) == 0)
+							if (atoi(args[0].c_str()) == SERV_OK)
 							{
 								dr = true;
 								state = INSYS;
@@ -363,7 +362,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			sendTo(sockfd, serialize(LUG, 0, NULL));
 			ListenRecv(sockfd, buf);
 			answerCode = parse(buf, numArgCount, args);
-			if (args[0].compare(API[SERV_OK]) == 0)
+			if (atoi(args[0].c_str()) == SERV_OK)
 			{
 				cout << "Log out successfully. Press any key." << endl;
 				state = INIT;
@@ -391,7 +390,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				{
 					if (numArgCount > 0 && args != NULL)
 					{
-						if (args[0].compare(API[SERV_OK]) == 0)
+						if (atoi(args[0].c_str()) == SERV_OK)
 						{
 							if (m.deserialize(args[1]))
 							{
@@ -433,7 +432,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			{
 				if (numArgCount > 0 && args != NULL)
 				{
-					if (args[0].compare(API[SERV_OK]) == 0)
+					if (atoi(args[0].c_str()) == SERV_OK)
 					{
 						cout << "User <" << uname << "> deleted successfully." << endl;
 						cout << "\nPress any key." << endl;
@@ -477,7 +476,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				{
 					if (numArgCount > 0 && args != NULL)
 					{
-						if (args[0].compare(API[SERV_OK]) == 0)
+						if (atoi(args[0].c_str()) == SERV_OK)
 						{
 							cout << "Message <" << mesId << "> deleted successfully." << endl;
 							cout << "\nPress any key." << endl;
@@ -514,7 +513,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			{
 				if (numArgCount > 0 && args != NULL)
 				{
-					if (args[0].compare(API[SERV_OK]) == 0)
+					if (atoi(args[0].c_str()) == SERV_OK)
 					{
 						for (int i = 1; i < numArgCount; i++)
 						{
@@ -558,7 +557,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			{
 				if (numArgCount > 0 && args != NULL)
 				{
-					if (args[0].compare(API[SERV_OK]) == 0)
+					if (atoi(args[0].c_str()) == SERV_OK)
 					{
 						for (int i = 1; i < numArgCount; i++)
 						{
@@ -610,7 +609,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				{
 					if (numArgCount > 0 && args != NULL)
 					{
-						if (args[0].compare(API[SERV_OK]) == 0)
+						if (atoi(args[0].c_str()) == SERV_OK)
 						{
 							if (m.deserialize(args[1]))
 							{
@@ -664,7 +663,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				{
 					if (numArgCount > 1 && args != NULL)
 					{
-						if (args[0].compare(API[SERV_OK]) == 0)
+						if (atoi(args[0].c_str()) == SERV_OK)
 						{
 							if (m.deserialize(args[1]))
 							{
@@ -730,7 +729,7 @@ string ClientWorker::MessageToString(const Message& m)
 string ClientWorker::serialize(unsigned int opcode, unsigned short numarg, const string * ss)
 {
 	stringstream sstr;
-	sstr << API[opcode] << DELIM_PARSE << numarg << DELIM_PARSE;
+	sstr << (int)opcode << DELIM_PARSE << (int)numarg << DELIM_PARSE;
 	if (numarg > 0 && ss != NULL)
 		for (int i = 0; i < numarg; i++)
 		{
@@ -741,9 +740,9 @@ string ClientWorker::serialize(unsigned int opcode, unsigned short numarg, const
 	return sstr.str();
 }
 
-unsigned int ClientWorker::parse(const string& input, unsigned short& numarg, string* &args)
+STATE ClientWorker::parse(const string& input, unsigned short& numarg, string* &args)
 {
-	unsigned int res = NO_OPERATION;
+	STATE res = NO_OPERATION;
 	if (input.size() > 0)
 	{
 		stringstream buf;
@@ -788,68 +787,36 @@ unsigned int ClientWorker::parse(const string& input, unsigned short& numarg, st
 	return res;
 }
 
-int ClientWorker::parseOpCode(const string& buf)
+STATE ClientWorker::parseOpCode(const string& buf)
 {
 	if (API_SIZE > 0)
 		for (int i = 0; i < API_SIZE; i++)
-			if (buf.compare(API[i]) == 0)
-				return i;
+			if (atoi(buf.c_str()) == i)
+				return static_cast<STATE>(i);
 	return NO_OPERATION;
 }
 
-void ClientWorker::sendTo(int socket, const string& message) 
+void ClientWorker::sendTo(int socket, const string& temp) 
 {
     //cout << "Send to server: " << message << endl;
-    int res = 0;
-    int size = message.size();
-    /*stringstream ss;
-    ss << size;
-    string s = ss.str();
-    while (s.size() < 10)
+    if (temp.size() > 0) 
     {
-            s.insert(s.begin(), '0');
-    }
-    s += message;
-    int num = ++lastPacketNumSend;
-            stringstream ss1;
-            ss1 << num;
-            string s1 = ss1.str();
-            while (s1.size() < 10)
-            {
-                s1.insert(s1.begin(), '0');
-            }
-            s1 += s;
-            s = s1;
-    res = sendto(socket, s.c_str(), s.size(), 0 , (struct sockaddr *) &servOut, sizeof(servOut));
-    printf("String to send: %s", s.c_str());
-    if (res != s.size())
-            printf("Send failed: %i != %i!\n", res, (int)s.length());*/
-    if (message.size() > 0) 
-    {
+        string message = temp + EOF_SYM;
         int tolen = sizeof (servOut);
-        stringstream sndBuf;
-        unsigned int curPos = 0;
+        string sndBuf;
+        long int curPos = 0;
         while (curPos < message.length()) 
         {
-            sndBuf.str(string());
             int num = ++lastPacketNumSend;
-            size_t dataCount = 1;
-            sndBuf << intToStr(num);
-            if (curPos == 0)
-            {
-                sndBuf << intToStr(message.length());
-                dataCount++;
-            }
-            int tLen = min(message.length()-curPos, UDP_DG_LEN - dataCount*TECH_DG_SIZE);
+            sndBuf = intToStr(num);
+            int tLen = min((int)(message.length()-curPos), UDP_DG_LEN - TECH_DG_SIZE);
             //cout << "\nSendind substr starting with: " << curPos << "; Count of symbols is " << tLen << "; lastPos = " << curPos+tLen << endl;
-            sndBuf << message.substr(curPos, tLen);
-               curPos += tLen;
-            if (sndBuf.str().length() < UDP_DG_LEN)
-		sndBuf << EOF_SYM;
-            cout << "Sending: " << sndBuf.str() << endl;
-            int count = sendto(socket, sndBuf.str().c_str(), sndBuf.str().length(), 0, (sockaddr*) & servOut, tolen);
-            if (count != sndBuf.str().length())
-                cout << "Send data mismatch: send " << count << ", have " << sndBuf.str().length() << endl;
+            sndBuf += message.substr(curPos, tLen);
+            curPos += tLen;
+            cout << "Sending: " << sndBuf << endl;
+            int count = sendto(socket, sndBuf.c_str(), sndBuf.length(), 0, (sockaddr*) & servOut, tolen);
+            if (count != sndBuf.length())
+                cout << "Send data mismatch: send " << count << ", have " << sndBuf.length() << endl;
         }
     }
 }
@@ -865,9 +832,8 @@ bool ClientWorker::ListenRecv(int socket, std::string& MsgStr) {
         s.clear();
         for (int i=0; i<UDP_DG_LEN; i++)
         {
-            if (buffer[i]!=EOF_SYM)
-                s+=buffer[i];
-            else
+            s+=buffer[i];
+            if (buffer[i]==EOF_SYM)
                 break;
         }
         //s = string(buffer);
@@ -885,47 +851,15 @@ bool ClientWorker::ListenRecv(int socket, std::string& MsgStr) {
         }
         if (lastPacketNumRecv + 1 == num) {
              lastPacketNumRecv = num;
-            /*s = str;
-            lastPacketNumRecv = num;
-                                
-            MsgStr+=s;
-            // parse len
-            if (MsgStr.length() >= len)
-            {
-                    string c = MsgStr.substr(0, len);
-                    MsgStr = MsgStr.substr(len, MsgStr.length() - 1);
-                    len = atoi(c.c_str());
-            }*/
-            // Пришел ли первый пакет и запоминаем длину
-            if (mesRLen == 0) {
-                if (str.length() >= TECH_DG_SIZE) {
-                    string c = str.substr(0, TECH_DG_SIZE);
-                    str = str.substr(TECH_DG_SIZE, str.length() - TECH_DG_SIZE);
-                    mesRLen = atoi(c.c_str());
-                    tempRBuf = str;
-                }
-                else cout << "First packet size is incorrect!\n";
-            }
-            else {
-                tempRBuf += str;
-            }
-            // Все ли данные прочитали?
-            if (tempRBuf.length() == mesRLen) {
-               
-                //
-                // lock mutex for client
-                //bool act = false;
-                //while (!act) 
-                //{
-                // read data
-                MsgStr.append(tempRBuf);
-                servOut = servIn;
-                //act = true;
-                tempRBuf = "";
-                mesRLen = 0;
-                break;
-                // unlock read mutex of clients[pos]
-                //}
+            for (int i = 0; i < str.length(); i++) {
+                if (str[i] == EOF_SYM) 
+                {                    
+                    MsgStr.append(tempRBuf);
+                    servOut = servIn;
+                    tempRBuf = "";
+                    return true;
+                } else
+                    tempRBuf += str[i];
             }
         }
         else

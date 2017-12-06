@@ -20,17 +20,53 @@ void ServerWorker::init(SOCKET s) {
     socket = s;
 }
 
+
+std::string itoa(int value, unsigned int base) {
+	
+	const char digitMap[] = "0123456789abcdef";
+	std::string buf;
+	// Guard:
+	
+	if (base == 0 || base > 16) {
+		// Error: may add more trace/log output here
+		return buf;
+	
+	}
+	
+	// Take care of negative int:	
+	std::string sign;
+	
+	int _value = value;
+	
+	// Check for case when input is zero:
+	
+	if (_value == 0) return "0";
+
+	if (value < 0) {
+	
+		_value = -value;
+	
+		sign = "-";
+	
+	}
+	
+	// Translating number to string with base:
+	
+	for (int i = 30; _value && i ; --i) {
+		buf = digitMap[ _value % base ] + buf;
+		_value /= base;
+	
+	}
+	return sign.append(buf);
+}
+
 bool ServerWorker::mainLoop() {
     STATE State = NO_OPERATION;
     string MsgStr;
-    string MessageBuf;
     string currentUserName;
     string errMessage;
     int mesId;
     
-    string sendToUserName;
-    bool isNameValid;
-    bool isSent;
     bool mesFound = false;
 
     string buf;
@@ -57,7 +93,7 @@ bool ServerWorker::mainLoop() {
             {
                 case START:  
                     args2 = new string[1];
-                    args2[0] = API[SERV_OK];
+                    args2[0] = itoa(SERV_OK, 10);
                     ff = serialize(ANSWER, 1, args2);
                     sendTo(ff);
                     delete[] args2;
@@ -65,11 +101,9 @@ bool ServerWorker::mainLoop() {
                 case EXIT: 
                     printf("Client with ID: %d is disconnect!\n", socket);
                     args2 = new string[1];
-                    args2[0] = API[SERV_OK];
+                    args2[0] = itoa(SERV_OK, 10);
                     sendTo(serialize(ANSWER, 1, args2));
                     delete[] args2;
-                    //closeSocket();
-                    //return true;
                     break;
                 case REG: 
                     if (args != NULL && numarg > 1) 
@@ -78,14 +112,14 @@ bool ServerWorker::mainLoop() {
                         if (RegisterState)
                         {
                             args2 = new string[1];
-                            args2[0] = API[SERV_OK];
+                            args2[0] = itoa(SERV_OK, 10);
                             sendTo(serialize(ANSWER, 1, args2));
                             delete[] args2;
                         }
                         else 
                         {
                             args2 = new string[2];
-                            args2[0] = API[NO_OPERATION];
+                            args2[0] = itoa(NO_OPERATION, 10);
                             args2[1] = errMessage;
                             sendTo(serialize(ANSWER, 2, args2));
                             delete[] args2;
@@ -94,7 +128,7 @@ bool ServerWorker::mainLoop() {
                     else 
                     {
                         args2 = new string[2];
-                        args2[0] = API[NO_OPERATION];
+                        args2[0] = NO_OPERATION;
                         args2[1] = "Not valid args.";
                         sendTo(serialize(ANSWER, 2, args2));
                         delete[] args2;
@@ -107,7 +141,7 @@ bool ServerWorker::mainLoop() {
                         if (LoginState)
                         {
                             args2 = new string[1];
-                            args2[0] = API[SERV_OK];
+                            args2[0] = itoa(SERV_OK, 10);
                             sendTo(serialize(ANSWER, 1, args2));
                             currentUserName = args[0];
                             delete[] args2;
@@ -115,7 +149,7 @@ bool ServerWorker::mainLoop() {
                         else 
                         {
                             args2 = new string[2];
-                            args2[0] = API[NO_OPERATION];
+                            args2[0] = itoa(NO_OPERATION, 10);
                             args2[1] = errMessage;
                             sendTo(serialize(ANSWER, 2, args2));
                             delete[] args2;
@@ -124,7 +158,7 @@ bool ServerWorker::mainLoop() {
                     else 
                     {
                         args2 = new string[2];
-                        args2[0] = API[NO_OPERATION];
+                        args2[0] = itoa(NO_OPERATION, 10);
                         args2[1] = "Not valid args.";
                         sendTo(serialize(ANSWER, 2, args2));
                         delete[] args2;
@@ -134,7 +168,7 @@ bool ServerWorker::mainLoop() {
                             cout << "Logging out." << endl;
                             currentUserName = "";
                             args2 = new string[1];
-                            args2[0] = API[SERV_OK];
+                            args2[0] = itoa(SERV_OK, 10);
                             sendTo(serialize(ANSWER, 1, args2));
                             delete[] args2;
                             break;
@@ -150,7 +184,7 @@ bool ServerWorker::mainLoop() {
                                     if (mesId == 0) 
                                     {
                                         args2 = new string[2];
-                                        args2[0] = API[NO_OPERATION];
+                                        args2[0] = itoa(NO_OPERATION, 10);
                                         args2[1] = "Error while sending the message ["+errMessage+"]";
                                         sendTo(serialize(ANSWER, 2, args2));
                                         delete[] args2;
@@ -159,7 +193,7 @@ bool ServerWorker::mainLoop() {
                                     {
                                         args2 = new string[2];
                                         m->body = "";
-                                        args2[0] = API[SERV_OK];
+                                        args2[0] = itoa(SERV_OK, 10);
                                         args2[1] = m->serialize();
                                         sendTo(serialize(ANSWER, 2, args2));
                                         delete[] args2;
@@ -177,12 +211,12 @@ bool ServerWorker::mainLoop() {
                                     args2 = new string[2];
                                     if (errMessage.size() == 0)
                                     {
-                                        args2[0] = API[SERV_OK];
+                                        args2[0] = itoa(SERV_OK, 10);
                                         args2[1] = "";
                                     }
                                     else
                                     {
-                                        args2[0] = API[NO_OPERATION];
+                                        args2[0] = itoa(NO_OPERATION, 10);
                                         args2[1] = errMessage;
                                     }
                                     sendTo(serialize(ANSWER, 2, args2));
@@ -200,12 +234,12 @@ bool ServerWorker::mainLoop() {
                                         args2 = new string[2];
                                         if (errMessage.size() == 0)
                                         {
-                                            args2[0] = API[SERV_OK];
+                                            args2[0] = itoa(SERV_OK, 10);
                                             args2[1] = "";
                                         }
                                         else
                                         {
-                                            args2[0] = API[NO_OPERATION];
+                                            args2[0] = itoa(NO_OPERATION, 10);
                                             args2[1] = errMessage;
                                         }
                                         sendTo(serialize(ANSWER, 2, args2));
@@ -229,7 +263,6 @@ bool ServerWorker::mainLoop() {
                                             {
                                                 if (mm[i] != NULL)
                                                 {
-                                                    //buf.append(MessageToString(m[i][0]));
                                                     if (mm[i][0].state == MSTATE_UNREAD) 
                                                     {
                                                         unread++;
@@ -237,7 +270,7 @@ bool ServerWorker::mainLoop() {
                                                 }
                                             }
                                             args2 = new string[unread+1];
-                                            args2[0] = API[SERV_OK];
+                                            args2[0] = itoa(SERV_OK, 10);
                                             cc = 1;
                                             for (unsigned int i=0; i<size; i++)
                                             {
@@ -260,13 +293,11 @@ bool ServerWorker::mainLoop() {
                                             }
                                             delete[] args2;
                                         }
-                                        else
-                                            return "No messages found!\n"; 
                                     }
                                     if (unread == 0) 
                                     {
                                         args2 = new string[2];
-                                        args2[0] = API[NO_OPERATION];
+                                        args2[0] = itoa(NO_OPERATION, 10);
                                         args2[1] = "Error while showing unread the messages. No messages found.";
                                         sendTo(serialize(ANSWER, 2, args2));
                                         delete[] args2;
@@ -287,7 +318,7 @@ bool ServerWorker::mainLoop() {
                                         if (size>0)
                                         {
                                             args2 = new string[size+1];
-                                            args2[0] = API[SERV_OK];
+                                            args2[0] = itoa(SERV_OK, 10);
                                             for (unsigned long i=1; i<=size; i++)
                                             {
                                                 if (mm[i-1] != NULL)
@@ -311,13 +342,11 @@ bool ServerWorker::mainLoop() {
                                             }
                                             delete[] args2;
                                         }
-                                        else
-                                            return "No messages found!\n"; 
                                     }
                                     if (size == 0) 
                                     {
                                         args2 = new string[2];
-                                        args2[0] = API[NO_OPERATION];
+                                        args2[0] = itoa(NO_OPERATION, 10);
                                         args2[1] = "Error while showing all messages.";
                                         sendTo(serialize(ANSWER, 2, args2));
                                         delete[] args2;
@@ -346,7 +375,7 @@ bool ServerWorker::mainLoop() {
                                                     if (mm[i][0].id == mesId) 
                                                     {
                                                         args2 = new string[2];
-                                                        args2[0] = API[SERV_OK];
+                                                        args2[0] = itoa(SERV_OK, 10);
                                                         args2[1] = mm[i][0].serialize();
                                                         mesFound = true;
                                                         if (mm[i][0].state == MSTATE_UNREAD) 
@@ -368,13 +397,11 @@ bool ServerWorker::mainLoop() {
                                             }
                                             delete[] args2;
                                         }
-                                        else
-                                            return "No messages found!\n"; 
                                     }
                                     if (!mesFound) 
                                     {
                                         args2 = new string[2];
-                                        args2[0] = API[NO_OPERATION];
+                                        args2[0] = itoa(NO_OPERATION, 10);
                                         args2[1] = "Error while showing the messages. No messages found.";
                                         sendTo(serialize(ANSWER, 2, args2));
                                         delete[] args2;
@@ -405,13 +432,12 @@ bool ServerWorker::mainLoop() {
                                                         mesId = AddMessage(mm[i], args[1], currentUserName, errMessage);
                                                         if (mesId == 0)
                                                         {
-                                                            args2[0] = API[NO_OPERATION];
+                                                            args2[0] = itoa(NO_OPERATION, 10);
                                                             args2[1] = "Error while resending the messages. Aim user not found.";
-                                                            //sendTo(serialize(ANSWER, 2, args2));
                                                         }
                                                         else 
                                                         {
-                                                            args2[0] = API[SERV_OK];
+                                                            args2[0] = itoa(SERV_OK, 10);
                                                             args2[1] = mm[i][0].serialize();
                                                         }
                                                         mesFound = true;
@@ -428,13 +454,11 @@ bool ServerWorker::mainLoop() {
                                             }
                                             delete[] args2;
                                         }
-                                        else
-                                            return "No messages found!\n"; 
                                     }
                                     if (!mesFound && size == 0) 
                                     {
                                         args2 = new string[2];
-                                        args2[0] = API[NO_OPERATION];
+                                        args2[0] = itoa(NO_OPERATION, 10);
                                         args2[1] = "Error while resending the messages. Message not found.";
                                         sendTo(serialize(ANSWER, 2, args2));
                                         delete[] args2;
@@ -502,17 +526,7 @@ string ServerWorker::RegisterNewUser(const string &uname, const string &passw, b
     int stat;
     string mes;
     res = false;
-    if (uname.length() > 0 && passw.length() > 0 ) {//data.size() > 0) {
-        /*string uname, passw;
-        bool b = 0;
-        for (int i = 0; i < data.size(); i++) {
-            if (data[i] == '@')
-                b = 1;
-            else {
-                if (b) passw.push_back(data[i]);
-                else uname.push_back(data[i]);
-            }
-        }*/
+    if (uname.length() > 0 && passw.length() > 0 ) {
 
         ifstream fin(GetPasswFilePth(uname).c_str());
         if (!fin.good()) {
@@ -548,21 +562,10 @@ string ServerWorker::RegisterNewUser(const string &uname, const string &passw, b
 }
 
 string ServerWorker::LoginNewUser(const string &uname, const string &passw, bool &res) {
-    //int stat;
     string username = "";
     string mes;
     res = false;
-    if (uname.length() > 0 && passw.length() > 0 ) {//if (data.size() > 0) {
-        /*string uname, passw, pass2;
-        bool b = 0;
-        for (int i = 0; i < data.size(); i++) {
-            if (data[i] == '@')
-                b = 1;
-            else {
-                if (b) passw.push_back(data[i]);
-                else uname.push_back(data[i]);
-            }
-        }*/
+    if (uname.length() > 0 && passw.length() > 0 ) {
         string pass2;
         string pth = GetPasswFilePth(uname);
         openSem(uname);
@@ -876,7 +879,7 @@ Message** ServerWorker::ReadAllMes(const string& username, unsigned long& res)
                     mes[res-1] = new Message();
                     buf.replace(0,string(MES_ID).size(), "");
                     mes[res-1][0].id = strtoul(buf.c_str(), NULL, 10);
-                    printf("ID = %d\n", mes[res-1][0].id);
+                    printf("ID = %lu\n", mes[res-1][0].id);
                     state++;
                     break;
                 case 1: // user name
@@ -895,7 +898,7 @@ Message** ServerWorker::ReadAllMes(const string& username, unsigned long& res)
                     buf.replace(0,string(MES_LEN).size(), "");
                     mes[res-1][0].len = strtoul(buf.c_str(), NULL, 10);
                     size = mes[res-1][0].len;
-                    printf("SIZE = %d\n", mes[res-1][0].len);
+                    printf("SIZE = %lu\n", mes[res-1][0].len);
                     state++;
                     break;
                 case 4: // state
@@ -948,7 +951,7 @@ Message* ServerWorker::ReadOneMes(const string& username, const unsigned long& i
                     mes = new Message();
                     buf.replace(0,string(MES_ID).size(), "");
                     mes->id = strtoul(buf.c_str(), NULL, 10);
-                    printf("ID = %d\n", mes->id);
+                    printf("ID = %lu\n", mes->id);
                     state++;
                     break;
                 case 1: // user name
@@ -967,7 +970,7 @@ Message* ServerWorker::ReadOneMes(const string& username, const unsigned long& i
                     buf.replace(0,string(MES_LEN).size(), "");
                     mes->len = strtoul(buf.c_str(), NULL, 10);
                     size = mes->len;
-                    printf("SIZE = %d\n", mes->len);
+                    printf("SIZE = %lu\n", mes->len);
                     state++;
                     break;
                 case 4: // state
@@ -1084,14 +1087,14 @@ void ServerWorker::sendTo(const string& message) {
     printf("String to send: %s\n", s.c_str());
     res = send(socket, s.c_str(), s.size(), 0);
     if (res != s.size())
-        printf("Send failed: %d != %d!\n", s.c_str(), s.size());
+        printf("Send failed: %s != %zd!\n", s.c_str(), s.size());
 }
 
 
 string ServerWorker::serialize(STATE opcode, unsigned short numarg, const string * ss)
 {
 	stringstream sstr;
-	sstr << API[opcode] << DELIM_PARSE << numarg << DELIM_PARSE;
+	sstr << (int)opcode << DELIM_PARSE << (int)numarg << DELIM_PARSE;
 	if (numarg > 0 && ss != NULL)
 		for (int i = 0; i <= numarg - 1; i++)
 		{
@@ -1152,46 +1155,9 @@ STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* &
 STATE ServerWorker::parseOpCode(const string& buf)
 {
     STATE res = NO_OPERATION;
-  
-        if (buf.compare(API[0])==0)
-                return SERV_OK;
-        else if (buf.compare(API[1])==0)
-                return NO_OPERATION;
-        else if (buf.compare(API[2])==0)
-                return ANSWER;
-        else if (buf.compare(API[3])==0)
-                return START;
-        else if (buf.compare(API[4])==0)
-                return INIT;
-        else if (buf.compare(API[5])==0)
-                return OPCODE;
-        else if (buf.compare(API[6])==0)
-                return EXIT;
-        else if (buf.compare(API[7])==0)
-                return REG;
-        else if (buf.compare(API[8])==0)
-                return LOG;
-        else if (buf.compare(API[9])==0)
-                return LUG;
-        else if (buf.compare(API[10])==0)
-                return SND;
-        else if (buf.compare(API[11])==0)
-                return DEL_US;
-        else if (buf.compare(API[12])==0)
-                return DEL_MES;
-        else if (buf.compare(API[13])==0)
-                return SH_UNR;
-        else if (buf.compare(API[14])==0)
-                return SH_ALL;
-        else if (buf.compare(API[15])==0)
-                return SH_EX;
-        else if (buf.compare(API[16])==0)
-                return RSND;
-        else if (buf.compare(API[17])==0)
-                return INSYS;
-        /*for (int i = 0; i < API_SIZE; i++)
-            if (buf.compare(API[i]) == 0)
-		return i;*/
+        for (int i = 0; i < API_SIZE; i++)
+            if (atoi(buf.c_str()) == i)
+		return static_cast<STATE>(i);
   
     return res;
 }
@@ -1204,397 +1170,3 @@ void ServerWorker::closeSocket()
     if (close(socket) == -1)
         printf("Socket #%d close failed\n", socket);
 }
-
-
-/*switch (State) {
-                // Main menu
-            case 1: 
-                sendTo("* MAIL *\n");
-                sendTo("Select the following items:\n");
-                if (currentUserName.size() > 0) sendTo("1 - Send message\n");
-                sendTo("2 - Exit\n");
-                if (currentUserName.size() == 0) sendTo("3 - Register\n");
-                if (currentUserName.size() > 0) sendTo("4 - Logout\n");
-                else sendTo("4 - Login\n");
-                if (currentUserName.size() > 0) sendTo("5 - Delete user\n");
-                if (currentUserName.size() > 0) sendTo("6 - Show unread messages\n");
-                if (currentUserName.size() > 0) sendTo("7 - Show all messages\n");
-                if (currentUserName.size() > 0) sendTo("8 - Show the exact message\n");
-                if (currentUserName.size() > 0) sendTo("9 - Delete message\n");
-                if (currentUserName.size() > 0) sendTo("10 - Resend message\n");
-                sendTo("Enter your option: ");
-                break;
-
-            case 2:
-                sendTo("Enter, whom you would like to send: ");
-                State = 2;
-                break;
-
-            case 3: printf("Client with ID: %d is disconnect!\n", socket);
-                closeSocket();
-                return true;
-                break;
-
-            case 4:
-                if (mesId != 0)
-                {
-                    buf = "Your message id = ";
-                    buf += mesId;
-                    buf += "\n";
-                    sendTo(buf.c_str());
-                }
-                else
-                    sendTo("An internal error occured while appending your message into base! Please, try again later!\n");
-                State =4;
-                break;
-
-            case 5: 
-                sendTo("Wrong input. Press any key.");
-                State = 4;
-                break;
-            case 6: 
-                sendTo("You are about to sign up. Enter the username consisting of <username>@<password>\n");
-                sendTo("Enter your option: ");
-                State = 5;
-                break;
-            case 7:
-                if (RegisterState == true) 
-                    sendTo("Registered successfully. Press any key.");
-                else 
-                {
-                    string buf = "Register failed. ERROR -> ";
-                    buf.append(errMessage.c_str());
-                    buf.append("Press any key.");
-                    sendTo(buf.c_str());
-                }
-                State = 4;
-                break;
-            case 8:
-                if (currentUserName.size() == 0) 
-                {
-                    sendTo("You are about to log in. Enter the username consisting of <username>@<password>\n");
-                    sendTo("Enter your option: ");
-                    State = 6;
-                } 
-                else 
-                {
-                    sendTo("Log out successfully.\n");
-                    currentUserName = "";
-                    State = 4;
-                }
-                break;
-            case 9:
-                if (LoginState == true) 
-                {
-                    string buf = "Login successfully. User -> ";
-                    buf.append(currentUserName);
-                    buf.append(". \nPress any key.");
-                    sendTo(buf.c_str());
-                } 
-                else 
-                {
-                    string buf = "Login failed. ERROR -> ";
-                    buf.append(errMessage);
-                    buf.append("Press any key.");
-                    sendTo(buf.c_str());
-                }
-                State = 4;
-                break;
-            case 10:
-                if (currentUserName.size() > 0) 
-                {
-                    sendTo("Really delete user? ('Y' - yes, <all other> - no): ");
-                    State = 7;
-                } 
-                else 
-                    sendTo("You should be logged in to delete user.\n");
-                break;
-            case 11:
-                if (errMessage.size() == 0) 
-                {
-                    sendTo("Account deleted successfully. Press any key.\n");
-                    State = 4;
-                } 
-                else 
-                {
-                    string buf = "ERROR -> ";
-                    buf.append(errMessage);
-                    sendTo(buf.c_str());
-                    sendTo("\nPress any key.");
-                    State = 4;
-                }
-                break;
-            case 12:
-                sendTo("You wanted to see the list of unread messages\n");
-                sendTo("\nPress any key.\n");
-                State = 8;
-                break;
-            case 13:
-                if (errMessage.size() == 0) 
-                {
-                    sendTo("Here is a list of unread messages:\n");
-                    sendTo(buf);
-                    sendTo("\nPress any key.\n");
-                    State = 4;
-                } 
-                else 
-                {
-                    string buf = "ERROR -> ";
-                    buf.append(errMessage);
-                    sendTo(buf.c_str());
-                    //sendTo("\nPress any key.\n");
-                    State = 4;
-                }
-                break;
-            case 14:
-                sendTo("You wanted to see the list of all messages\n");
-                sendTo("Press any key.\n");
-                State = 9;
-                break;
-            case 15:
-                if (errMessage.size() == 0) 
-                {
-                    sendTo("Here is a list of all messages:\n");
-                    sendTo(buf);
-                    sendTo("\nPress any key.\n");
-                    State = 4;
-                } 
-                else 
-                {
-                    string buf = "ERROR -> ";
-                    buf.append(errMessage);
-                    sendTo(buf.c_str());
-                    sendTo("\nPress any key.");
-                    State = 4;
-                }
-                break;
-            case 16:
-                sendTo("You wanted to see the exact message. Please, enter the number of your message: \n");
-                State = 10;
-                break;
-            case 17:
-                if (errMessage.size() == 0) 
-                {
-                    sendTo("Here is your message:\n");
-                    sendTo(buf);
-                    sendTo("\nPress any key.");
-                    State = 4;
-                } 
-                else 
-                {
-                    string buf = "ERROR -> ";
-                    buf.append(errMessage);
-                    sendTo(buf.c_str());
-                    sendTo("\nPress any key.");
-                    State = 4;
-                }
-                break;
-            case 18:
-                sendTo("You wanted to delete the exact message. Please, enter the number of your message: \n");
-                State = 11;
-                break;
-            case 19:
-                if (errMessage.size() == 0) 
-                {
-                    sendTo("Message deleted successfully. Press any key.\n");
-                    State = 4;
-                } 
-                else 
-                {
-                    string buf = "ERROR -> ";
-                    buf.append(errMessage);
-                    sendTo(buf.c_str());
-                    sendTo("\nPress any key.");
-                    State = 4;
-                }
-                break;    
-            case 20:
-                sendTo("You wanted to resend the exact message. Enter the destination username:\n"); //Please, enter the message number and destination-user in format <number>@<user>:\n");
-                State = 12;
-                break;
-            case 21:
-                if (errMessage.size() == 0) 
-                {
-                    sendTo("Message resent successfully. Press any key.\n");
-                    State = 4;
-                } 
-                else 
-                {
-                    string buf = "ERROR -> ";
-                    buf.append(errMessage);
-                    sendTo(buf.c_str());
-                    sendTo("\nPress any key.");
-                    State = 4;
-                }
-                break;  
-            case 22:
-                if (isNameValid) 
-                {
-                    sendTo("Good. Now enter the message text: \n");
-                    State = 13;
-                }
-                else 
-                {
-                    sendTo("Username is not valid. Please, try again.\n");
-                    State = 4;
-                }
-                break;
-            case 23:
-                if (isSent) 
-                {
-                    sendTo("The message is successfully sent to user -> ");
-                    string buf = sendToUserName;
-                    sendTo(buf.c_str());
-                    sendTo("\nPress any key.");
-                    State = 4;
-                }
-                else 
-                {
-                    sendTo("The message is not sent.\n");
-                    State = 4;
-                }
-                break;
-            case 24:
-                if (isNameValid) 
-                {
-                    sendTo("Enter the message to send: ");
-                    State = 13;
-                }
-                else 
-                {
-                    sendTo("The destination username is not valid. Please, try again.");
-                    State = 4;
-                }
-                break;
-            case 25:
-                if (isNameValid) 
-                {
-                    sendTo("Enter the number of message to resend: ");
-                    State = 14;
-                }
-                else 
-                {
-                    sendTo("The destination username is not valid. Please, try again.");
-                    State = 4;
-                }
-                break;
-        }
-
-        if (State != 8) if (!ListenRecv(MsgStr)) return false;
-
-        switch (State) {
-            case 1: 
-                if (strcmp((char*) MsgStr.c_str(), "1") == 0) 
-                {
-                    if (currentUserName.size() > 0) State = 2;
-                    else State = 5;
-                } 
-                else if (strcmp((char*) MsgStr.c_str(), "2") == 0) State = 3;
-                else if (strcmp((char*) MsgStr.c_str(), "3") == 0) 
-                {
-                    if (currentUserName.size() == 0) State = 6;
-                    else State = 5;
-                } 
-                else if (strcmp((char*) MsgStr.c_str(), "4") == 0) State = 8;
-                else if (strcmp((char*) MsgStr.c_str(), "5") == 0) 
-                {
-                    if (currentUserName.size() > 0) State = 10;
-                    else State = 5;
-                } 
-                else if (strcmp((char*) MsgStr.c_str(), "6") == 0) 
-                {
-                    if (currentUserName.size() > 0) State = 12;
-                    else State = 5;
-                } 
-                else if (strcmp((char*) MsgStr.c_str(), "7") == 0) 
-                {
-                    if (currentUserName.size() > 0) State = 14;
-                    else State = 5;
-                } 
-                else if (strcmp((char*) MsgStr.c_str(), "8") == 0) 
-                {
-                    if (currentUserName.size() > 0) State = 16;
-                    else State = 5;
-                } 
-                else if (strcmp((char*) MsgStr.c_str(), "9") == 0) 
-                {
-                    if (currentUserName.size() > 0) State = 18;
-                    else State = 5;
-                } 
-                else if (strcmp((char*) MsgStr.c_str(), "10") == 0) 
-                {
-                    if (currentUserName.size() > 0) State = 20;
-                    else State = 5;
-                } 
-                else State = 5;
-                break;
-
-            case 2:
-                isNameValid = checkUser(MsgStr);
-                if (isNameValid) sendToUserName = MsgStr;
-                else sendToUserName = "";
-                State = 24;
-                break;
-
-            case 3:
-                break;
-
-            case 4:
-                State = 1;
-                break;
-            case 5:
-                errMessage = RegisterNewUser(MsgStr, RegisterState);
-                State = 7;
-                break;
-            case 6:
-                errMessage = LoginNewUser(MsgStr, LoginState, currentUserName);
-                State = 9;
-                break;
-            case 7:
-                if (strcmp((char*) MsgStr.c_str(), "Y") == 0) {
-                    errMessage = DeleteUser(currentUserName);
-                    currentUserName = "";
-                    State = 11;
-                } else
-                    State = 1;
-                break;
-            case 8:
-                errMessage = ShowUnreadMes(currentUserName, buf);
-                State = 13;
-                break;
-            case 9:
-                errMessage = ShowAllMes(currentUserName, buf);
-                State = 15;
-                break;
-            case 10:
-                errMessage = ShowExactMes(currentUserName, buf, MsgStr);
-                State = 17;
-                break;
-            case 11:
-                errMessage = DeleteMes(currentUserName, MsgStr);
-                State = 19;
-                break;
-            case 12:
-                isNameValid = checkUser(MsgStr);
-                if (isNameValid) sendToUserName = MsgStr;
-                else sendToUserName = "";
-                State = 25;
-                break;
-            case 13:
-                isSent = true;
-                MessageBuf = MsgStr;
-                if (currentUserName.compare(sendToUserName) != 0) 
-                {
-                    mesId = AddMessage(MsgStr, currentUserName, MESSAGE_STATES[MSTATE_NORMAL], currentUserName);
-                    if (mesId == 0) 
-                        isSent = false;
-                }
-                mesId = AddMessage(MsgStr, sendToUserName, MESSAGE_STATES[MSTATE_UNREAD], currentUserName);
-                if (mesId == 0) 
-                    isSent = false;
-                State = 23;
-                break;
-            case 14:
-                errMessage = ResendMes(currentUserName, MsgStr, sendToUserName);
-                State = 21;
-                break;*/

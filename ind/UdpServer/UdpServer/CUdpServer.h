@@ -11,7 +11,7 @@ typedef int             ClientID;
 
 #define PRINT_DEADLOCK
 
-#define TIMEOUT_MS			100     /* Receive timeout. Seconds between retransmits */
+#define TIMEOUT_MS			1000     /* Receive timeout. Seconds between retransmits */
 #define MUTEX_TIMEOUT		100
 #define LISTEN_THREAD_SLEEP 10
 

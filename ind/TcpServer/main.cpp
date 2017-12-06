@@ -12,8 +12,6 @@ int main(int argc, char** argv) {
     while(true){
         scanf("%s",str);
 		if(strcmp(str,"exit")==0){ 
-                    //Server.DisconnectAll();
-                    //return 0;
                     exit(0);
                     break;
                 }

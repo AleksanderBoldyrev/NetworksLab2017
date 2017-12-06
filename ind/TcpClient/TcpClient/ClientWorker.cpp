@@ -709,10 +709,10 @@ string ClientWorker::MessageToString(const Message& m)
 	return res.str();
 }
 
-string ClientWorker::serialize(unsigned int opcode, unsigned short numarg, const string * ss)
+string ClientWorker::serialize(STATE opcode, unsigned short numarg, const string * ss)
 {
 	stringstream sstr;
-	sstr << opcode << DELIM_PARSE << numarg << DELIM_PARSE;
+	sstr << (int)opcode << DELIM_PARSE << (int)numarg << DELIM_PARSE;
 	if (numarg > 0 && ss != nullptr)
 		for (int i = 0; i < numarg; i++)
 		{
@@ -864,6 +864,7 @@ bool ClientWorker::ListenRecv(SOCKET socket, std::string& MsgStr)
 	if (ssize == 10)
 	{
 		size = atoi(c);
+		//char* recvbuf = (char*)malloc((size)*sizeof(char));
 		char* recvbuf = new char[size];
 
 		int res = recv(socket, recvbuf, size, 0);

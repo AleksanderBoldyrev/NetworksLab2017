@@ -47,7 +47,7 @@ public:
 	unsigned long lastPacketNumSend = 0;
 	unsigned long lastPacketNumRecv = 0;
 	std::string tempRBuf;
-	unsigned long mesRLen = 0;
+	//unsigned long mesRLen = 0;
 
 	~ThreadData()
 	{

@@ -5,7 +5,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-
 #include <string.h>
 #include <string>
 #include <stdlib.h>
@@ -24,12 +23,6 @@ int main(int argc, void** argv)
 	string* ff = new string(s);
 
 	f.startThread(ff);
-	//Sleep(5000); // wait 5 seconds until client is connecting to server
-	/*while (!t.try_lock())
-	{
-		Sleep(1000);
-	}
-	t.unlock();*/
 	printf("Mail client terminated!\n");
 	//system("pause");
         getchar();

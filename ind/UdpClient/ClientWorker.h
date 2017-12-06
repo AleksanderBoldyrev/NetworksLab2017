@@ -64,13 +64,13 @@ public:
 	void sendTo(int s, const string& message);
 	bool ListenRecv(int s, std::string& MsgStr);
 	string serialize(unsigned int opcode, unsigned short numarg, const string* ss);
-	unsigned int parse(const string& input, unsigned short& numarg, string* &args);
+	STATE parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);
 private:
 	void run(string host, unsigned short port);
 	int readN(int s, char* buf, int remain, int flags);
 	void ListenLoop(string host, unsigned short port);
-	int parseOpCode(const string& buf);
+	STATE parseOpCode(const string& buf);
 	pthread_t tHandle;
         
         struct sockaddr_in servOut;
@@ -83,5 +83,4 @@ private:
 	unsigned long lastPacketNumRecv = 0;
         
 	string tempRBuf;
-	unsigned long mesRLen = 0;
 };

@@ -2,9 +2,7 @@
 #include "CUdpServer.h"
 
 CUdpServer::CUdpServer() {
-	//AcceptSock = 0;
-	//LastClientID = 0;
-	//Mut = CreateMutex(NULL, FALSE, L"UdpServer");
+
 }
 
 CUdpServer::CUdpServer(const CUdpServer& orig) {
@@ -16,9 +14,6 @@ CUdpServer::~CUdpServer() {
 
 DWORD WINAPI CUdpServer::ListenThread(LPVOID pParam) {
 	printf("UDP thread is run\r\n");
-	/*ListenThInput* pOldData = (ListenThInput*)pParam;
-	ListenThInput pData = (*pOldData);*/
-	//delete pOldData;
 	ThreadData* l = (ThreadData*)pParam;
 	if (l != nullptr)
 	{
@@ -35,7 +30,6 @@ DWORD WINAPI CUdpServer::ListenThread(LPVOID pParam) {
 		cout << "Received null data structure!" << endl;
 		return -1;
 	}
-	//pthread_exit(0);
 	return 0;
 };
 
@@ -52,10 +46,6 @@ DWORD WINAPI CUdpServer::AcceptThread(LPVOID pParam)
 			printf("WSAStartup failed: %ui\n", n);
 			return 1;
 		}
-
-		//AcceptThInput* pOldData = (AcceptThInput*)pParam;
-		//AcceptThInput pData = (*pOldData);
-		//delete pOldData;
 		SOCKET s = socket(AF_INET, SOCK_DGRAM, 0);
 		if (s == -1) {
 			printf("Socket create failed\r\n");
@@ -86,23 +76,13 @@ DWORD WINAPI CUdpServer::AcceptThread(LPVOID pParam)
 
 		while (1)
 		{
-			//printf("Waiting...\n");
 			processInput(s, clients, cSize);
 			processOutput(s, clients, cSize);
 
-			/*if (recvfrom(s, buffer, sizeof(buffer), 0, (sockaddr*)&from, &fromlen) != SOCKET_ERROR)
-			{
-				string str = buffer;
-				//printf("Received message from %s: %s\n", inet_ntoa(from.sin_addr), buffer);
-				processInput(str);
-				processOutput(s, str);
-			}*/
 			Sleep(LISTEN_THREAD_SLEEP);
 		}
 		closesocket(s);
-		//if (listen((*pData.pAcceptSock), SOMAXCONN) == -1) {
-		//	printf("Listen failed\r\n");
-		//}
+
 		return 0;
 	}
 	return -1;
@@ -112,18 +92,10 @@ DWORD WINAPI CUdpServer::AcceptThread(LPVOID pParam)
 //If client has current IP, then returns client ID, else it creates a new thread, puts new client into DB and returns new ID. 
 unsigned int CUdpServer::checkClient(const sockaddr_in& saddr, ThreadData* &clients, unsigned int& cSize)
 {
-	//if (clients == nullptr)
-	///{
-	//	clients = new ThreadData()
-	//}
-	//if (clients != nullptr)
-	//{
-	
 	if (cSize > 0)
 	{
 		for (int i = 0; i < cSize; i++)
 		{
-			//if (saddr.sin_addr.S_un.S_addr == clients[i].address.sin_addr.S_un.S_addr && saddr.sin_family == clients[i].address.sin_family && saddr.sin_port == clients[i].address.sin_port && saddr.sin_zero == clients[i].address.sin_zero)
 			DWORD result = WaitForSingleObject(clients[i].tHandle, 10);
 
 			if (result == WAIT_OBJECT_0) {
@@ -147,7 +119,6 @@ unsigned int CUdpServer::checkClient(const sockaddr_in& saddr, ThreadData* &clie
 
 		for (int i = 0; i < cSize; i++)
 		{
-			//if (saddr.sin_addr.S_un.S_addr == clients[i].address.sin_addr.S_un.S_addr && saddr.sin_family == clients[i].address.sin_family && saddr.sin_port == clients[i].address.sin_port && saddr.sin_zero == clients[i].address.sin_zero)
 			if ((saddr.sin_addr.S_un.S_addr == clients[i].address.sin_addr.S_un.S_addr) && (saddr.sin_port == clients[i].address.sin_port))
 			{
 				return i; // we found our client
@@ -185,24 +156,11 @@ unsigned int CUdpServer::checkClient(const sockaddr_in& saddr, ThreadData* &clie
 	clients[cSize - 1].sBuf = new string();
 	clients[cSize - 1].rBuf = new string();
 
-	// lock read mutex
-	/*HANDLE m = CreateMutex(NULL, FALSE, clients[cSize - 1].rMutexName.c_str());
-	DWORD result;
-	result = WaitForSingleObject(m, INFINITE);
-	if (result != WAIT_OBJECT_0)
-	{
-		cout << "Failed to lock mutex!" << endl;
-		cSize--;
-		return 0;
-	}*/
-
 	DWORD t;
 	clients[cSize - 1].tHandle = CreateThread(0, 0, ListenThread, (void*)&clients[cSize - 1], 0, &t);
 	clients[cSize - 1].tId = t;
 
 	return cSize-1;
-	//}
-	//return 0;
 }
 
 void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned int& cSize)
@@ -211,33 +169,23 @@ void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned in
 	int fromlen = sizeof(from);
 	char buffer[UDP_DG_LEN];
 	string buff2;
-	//stringstream bug;
 	ZeroMemory(buffer, sizeof(buffer));
-	//WSAEnumNetworkEvents();
 	while (recvfrom(s, buffer, sizeof(buffer), 0, (sockaddr*)&from, &fromlen) != SOCKET_ERROR)
 	{
-		HANDLE mutex;// = CreateMutex(NULL, FALSE, clients[pos].rMutexName.c_str());
+		HANDLE mutex;
 		// write data into read buffer of clients[pos]
 		buff2.clear();
-		for (int i = 0; i<UDP_DG_LEN; i++)
+		for (int i = 0; i < UDP_DG_LEN; i++)
 		{
-			if (buffer[i] != EOF_SYM)
-				buff2 += buffer[i];
-			else
+			buff2 += buffer[i];
+			if (buffer[i] == EOF_SYM)
 				break;
 		}
 		ZeroMemory(buffer, sizeof(buffer));
 		if (buff2.length() > 0)
 		{
-
-			//buff2.erase(std::remove(buff2.begin(), buff2.end(), '\t'), buff2.end());
 			buff2.erase(std::remove(buff2.begin(), buff2.end(), '\r'), buff2.end());
-			//buff2.erase(std::remove(buff2.begin(), buff2.end(), '\n'), buff2.end());
 			buff2.erase(std::remove(buff2.begin(), buff2.end(), '\0'), buff2.end());
-			//remove(buff2.begin(), buff2.end(), '\t');
-			//remove(buff2.begin(), buff2.end(), '\r');
-			//remove(buff2.begin(), buff2.end(), '\0');
-			//remove(buff2.begin(), buff2.end(), '\n');
 			cout << "Recieved: " << buff2 << endl;
 
 			unsigned int pos = checkClient(from, clients, cSize);
@@ -253,46 +201,29 @@ void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned in
 			if (clients[pos].lastPacketNumRecv + 1 == num)
 			{
 				clients[pos].lastPacketNumRecv = num;
-				// Пришел ли первый пакет и запоминаем длину
-				if (clients[pos].mesRLen == 0)
+				for (int i = 0; i < str.length(); i++)
 				{
-					if (str.length() >= TECH_DG_SIZE)
+					if (str[i] == EOF_SYM)
 					{
-						string c = str.substr(0, TECH_DG_SIZE);
-						str = str.substr(TECH_DG_SIZE, str.length() - TECH_DG_SIZE);
-						clients[pos].mesRLen = atoi(c.c_str());
-						clients[pos].tempRBuf = str;
+						bool act = false;
+						while (!act)
+						{
+							if (LockMutex(clients[pos].rMutexName, mutex))
+							{
+								// read data
+								if (clients[pos].rBuf != nullptr)
+									clients[pos].rBuf->append(clients[pos].tempRBuf);
+								clients[pos].address = from;
+								act = true;
+								clients[pos].tempRBuf = "";
+								// unlock read mutex of clients[pos]
+							}
+							UnlockMutex(mutex);
+						}
 					}
 					else
-						cout << "First packet size is incorrect!\n";
+						clients[pos].tempRBuf += str[i];
 				}
-				else
-				{
-					clients[pos].tempRBuf += str;	
-				}
-				// Все ли данные прочитали?
-				if (clients[pos].tempRBuf.length() == clients[pos].mesRLen)
-				{
-					//
-					// lock mutex for client
-					bool act = false;
-					while (!act)
-					{
-						if (LockMutex(clients[pos].rMutexName, mutex))
-						{
-							// read data
-							if (clients[pos].rBuf != nullptr)
-								clients[pos].rBuf->append(clients[pos].tempRBuf);
-							clients[pos].address = from;
-							act = true;
-							clients[pos].tempRBuf = "";
-							clients[pos].mesRLen = 0;
-							// unlock read mutex of clients[pos]
-						}
-						UnlockMutex(mutex);
-					}
-				}
-
 			}
 			else
 				cout << "Packet num mismatch!\n";
@@ -302,7 +233,6 @@ void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned in
 
 void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsigned int& cSize)
 {
-	//sendto(s, str.c_str(), str.length(), 0, (sockaddr*)&from, fromlen);
 	if (cSize > 0 && clients != nullptr)
 	{
 		// fill send flags for each client
@@ -314,9 +244,6 @@ void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsig
 		for (int i = 0; i < cSize; i++)
 		{
 			//Lock write mutex for each client; 
-			/*HANDLE m = CreateMutex(NULL, FALSE, clients[i].rMutexName.c_str());
-			DWORD result;
-			result = WaitForSingleObject(m, INFINITE);*/
 			HANDLE m;
 			bool act = false;
 			int count = 0;
@@ -334,11 +261,13 @@ void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsig
 					if (clients[i].sBuf != nullptr)
 					{
 						string ss = *clients[i].sBuf;
+						
 						unsigned int curPos = 0;
 						// Разбиваем ss на подстроки длины количества символов UDP пакета и каждый раз отправляем их как новые пакеты.
 
 						if (ss.size() > 0)
 						{
+							ss += EOF_SYM;
 							clients[i].sBuf->clear();
 							int tolen = sizeof(clients[i].address);
 							stringstream sndBuf;
@@ -346,19 +275,11 @@ void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsig
 							{
 								sndBuf.str(string());
 								int num = ++clients[i].lastPacketNumSend;
-								int dataCount = 1;
 								sndBuf << intToStr(num);
-								if (curPos == 0)
-								{
-									sndBuf << intToStr(ss.length());
-									dataCount++;
-								}
-								int tLen = min(ss.length()-curPos, UDP_DG_LEN - dataCount*TECH_DG_SIZE);
+								int tLen = min(ss.length()-curPos, UDP_DG_LEN - TECH_DG_SIZE);
 								//cout << "\nSendind substr starting with: " << curPos << "; Count of symbols is " << tLen << "; lastPos = " << curPos+tLen << endl;
 								sndBuf << ss.substr(curPos, tLen);
 								curPos += tLen;
-								if (sndBuf.str().length() < UDP_DG_LEN)
-									sndBuf << EOF_SYM;
 								cout << "Sending to client: " << sndBuf.str().c_str() << endl;
 								int count = sendto(s, sndBuf.str().c_str(), sndBuf.str().length(), 0, (sockaddr*)&clients[i].address, tolen);
 								if (count != sndBuf.str().length())
@@ -420,29 +341,3 @@ void CUdpServer::StartAccept(USHORT port)
 		UnlockMutex(Mut);
 	}
 }
-
-//void CUdpServer::StartListenTh(SOCKET Sock)
-//{
-	/*LockMutex(Mut);
-	ClientInfo CliInfo;
-	CliInfo.ID = LastClientID++;
-	CliInfo.ClientSocket = Sock;
-
-	ListenThInput* pThInput = new ListenThInput;
-	pThInput->CliID = CliInfo.ID;
-	pThInput->ClientSocket = Sock;
-	pThInput->pParent = this;
-
-	//pthread_create(&(CliInfo.ClientThreadInfo.ThHandle), NULL, ListenThread, pThInput);
-
-	DWORD t;
-	HANDLE tHandle = CreateThread(0, 0, ListenThread, pThInput, 0, &t);
-	clientsSize++;
-	HANDLE * arr = new HANDLE[clientsSize];
-	if (clientsSize > 1)
-		for (unsigned int i = 0; i < clientsSize - 1; i++)
-			arr[i] = clients[i];
-	clients = arr;
-	clients[clientsSize - 1] = tHandle;
-	UnlockMutex(Mut);*/
-	//}

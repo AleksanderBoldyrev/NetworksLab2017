@@ -57,18 +57,12 @@ bool ServerWorker::mainLoop() {
 			{
 			case START:
 				args2 = new string[1];
-				args2[0] = API[SERV_OK];
+				args2[0] = to_string(SERV_OK);
 				ff = serialize(ANSWER, 1, args2);
 				sendTo(ff);
 				delete[] args2;
 				break;
 			case EXIT:
-				//printf("Client with ID: %d is disconnected!\n", socket);
-				//args2 = new string[1];
-				//args2[0] = API[SERV_OK];
-				//sendTo(serialize(ANSWER, 1, args2));
-				//delete[] args2;
-				//closeSocket();
 				return true;
 				break;
 			case REG:
@@ -78,14 +72,14 @@ bool ServerWorker::mainLoop() {
 					if (RegisterState)
 					{
 						args2 = new string[1];
-						args2[0] = API[SERV_OK];
+						args2[0] = to_string(SERV_OK);
 						sendTo(serialize(ANSWER, 1, args2));
 						delete[] args2;
 					}
 					else
 					{
 						args2 = new string[2];
-						args2[0] = API[NO_OPERATION];
+						args2[0] = to_string(NO_OPERATION);
 						args2[1] = errMessage;
 						sendTo(serialize(ANSWER, 2, args2));
 						delete[] args2;
@@ -94,7 +88,7 @@ bool ServerWorker::mainLoop() {
 				else
 				{
 					args2 = new string[2];
-					args2[0] = API[NO_OPERATION];
+					args2[0] = to_string(NO_OPERATION);
 					args2[1] = "Not valid args.";
 					sendTo(serialize(ANSWER, 2, args2));
 					delete[] args2;
@@ -107,7 +101,7 @@ bool ServerWorker::mainLoop() {
 					if (LoginState)
 					{
 						args2 = new string[1];
-						args2[0] = API[SERV_OK];
+						args2[0] = to_string(SERV_OK);
 						sendTo(serialize(ANSWER, 1, args2));
 						currentUserName = args[0];
 						delete[] args2;
@@ -115,7 +109,7 @@ bool ServerWorker::mainLoop() {
 					else
 					{
 						args2 = new string[2];
-						args2[0] = API[NO_OPERATION];
+						args2[0] = to_string(NO_OPERATION);
 						args2[1] = errMessage;
 						sendTo(serialize(ANSWER, 2, args2));
 						delete[] args2;
@@ -124,7 +118,7 @@ bool ServerWorker::mainLoop() {
 				else
 				{
 					args2 = new string[2];
-					args2[0] = API[NO_OPERATION];
+					args2[0] = to_string(NO_OPERATION);
 					args2[1] = "Not valid args.";
 					sendTo(serialize(ANSWER, 2, args2));
 					delete[] args2;
@@ -134,7 +128,7 @@ bool ServerWorker::mainLoop() {
 				cout << "Logging out." << endl;
 				currentUserName = "";
 				args2 = new string[1];
-				args2[0] = API[SERV_OK];
+				args2[0] = to_string(SERV_OK);
 				sendTo(serialize(ANSWER, 1, args2));
 				delete[] args2;
 				break;
@@ -150,7 +144,7 @@ bool ServerWorker::mainLoop() {
 						if (mesId == 0)
 						{
 							args2 = new string[2];
-							args2[0] = API[NO_OPERATION];
+							args2[0] = to_string(NO_OPERATION);
 							args2[1] = "Error while sending the message [" + errMessage + "]";
 							sendTo(serialize(ANSWER, 2, args2));
 							delete[] args2;
@@ -159,7 +153,7 @@ bool ServerWorker::mainLoop() {
 						{
 							args2 = new string[2];
 							m->body = "";
-							args2[0] = API[SERV_OK];
+							args2[0] = to_string(SERV_OK);
 							args2[1] = m->serialize();
 							sendTo(serialize(ANSWER, 2, args2));
 							delete[] args2;
@@ -177,12 +171,12 @@ bool ServerWorker::mainLoop() {
 					args2 = new string[2];
 					if (errMessage.size() == 0)
 					{
-						args2[0] = API[SERV_OK];
+						args2[0] = to_string(SERV_OK);
 						args2[1] = "";
 					}
 					else
 					{
-						args2[0] = API[NO_OPERATION];
+						args2[0] = to_string(NO_OPERATION);
 						args2[1] = errMessage;
 					}
 					sendTo(serialize(ANSWER, 2, args2));
@@ -200,12 +194,12 @@ bool ServerWorker::mainLoop() {
 						args2 = new string[2];
 						if (errMessage.size() == 0)
 						{
-							args2[0] = API[SERV_OK];
+							args2[0] = to_string(SERV_OK);
 							args2[1] = "";
 						}
 						else
 						{
-							args2[0] = API[NO_OPERATION];
+							args2[0] = to_string(NO_OPERATION);
 							args2[1] = errMessage;
 						}
 						sendTo(serialize(ANSWER, 2, args2));
@@ -237,7 +231,7 @@ bool ServerWorker::mainLoop() {
 								}
 							}
 							args2 = new string[unread + 1];
-							args2[0] = API[SERV_OK];
+							args2[0] = to_string(SERV_OK);
 							cc = 1;
 							for (unsigned int i = 0; i<size; i++)
 							{
@@ -266,7 +260,7 @@ bool ServerWorker::mainLoop() {
 					if (unread == 0)
 					{
 						args2 = new string[2];
-						args2[0] = API[NO_OPERATION];
+						args2[0] = to_string(NO_OPERATION);
 						args2[1] = "Error while showing unread the messages. No messages found.";
 						sendTo(serialize(ANSWER, 2, args2));
 						delete[] args2;
@@ -287,7 +281,7 @@ bool ServerWorker::mainLoop() {
 						if (size>0)
 						{
 							args2 = new string[size + 1];
-							args2[0] = API[SERV_OK];
+							args2[0] = to_string(SERV_OK);
 							for (unsigned long i = 1; i <= size; i++)
 							{
 								if (mm[i - 1] != NULL)
@@ -317,7 +311,7 @@ bool ServerWorker::mainLoop() {
 					if (size == 0)
 					{
 						args2 = new string[2];
-						args2[0] = API[NO_OPERATION];
+						args2[0] = to_string(NO_OPERATION);
 						args2[1] = "Error while showing all messages.";
 						sendTo(serialize(ANSWER, 2, args2));
 						delete[] args2;
@@ -346,7 +340,7 @@ bool ServerWorker::mainLoop() {
 									if (mm[i][0].id == mesId)
 									{
 										args2 = new string[2];
-										args2[0] = API[SERV_OK];
+										args2[0] = to_string(SERV_OK);
 										args2[1] = mm[i][0].serialize();
 										mesFound = true;
 										if (mm[i][0].state == MSTATE_UNREAD)
@@ -374,7 +368,7 @@ bool ServerWorker::mainLoop() {
 					if (!mesFound)
 					{
 						args2 = new string[2];
-						args2[0] = API[NO_OPERATION];
+						args2[0] = to_string(NO_OPERATION);
 						args2[1] = "Error while showing the messages. No messages found.";
 						sendTo(serialize(ANSWER, 2, args2));
 						delete[] args2;
@@ -405,13 +399,13 @@ bool ServerWorker::mainLoop() {
 										mesId = AddMessage(mm[i], args[1], currentUserName, errMessage);
 										if (mesId == 0)
 										{
-											args2[0] = API[NO_OPERATION];
+											args2[0] = to_string(NO_OPERATION);
 											args2[1] = "Error while resending the messages. Aim user not found.";
 											//sendTo(serialize(ANSWER, 2, args2));
 										}
 										else
 										{
-											args2[0] = API[SERV_OK];
+											args2[0] = to_string(SERV_OK);
 											args2[1] = mm[i][0].serialize();
 										}
 										mesFound = true;
@@ -434,7 +428,7 @@ bool ServerWorker::mainLoop() {
 					if (!mesFound && size == 0)
 					{
 						args2 = new string[2];
-						args2[0] = API[NO_OPERATION];
+						args2[0] = to_string(NO_OPERATION);
 						args2[1] = "Error while resending the messages. Message not found.";
 						sendTo(serialize(ANSWER, 2, args2));
 						delete[] args2;
@@ -502,25 +496,15 @@ string ServerWorker::RegisterNewUser(const string &uname, const string &passw, b
 	int stat;
 	string mes;
 	res = false;
-	if (uname.length() > 0 && passw.length() > 0) {//data.size() > 0) {
-												   /*string uname, passw;
-												   bool b = 0;
-												   for (int i = 0; i < data.size(); i++) {
-												   if (data[i] == '@')
-												   b = 1;
-												   else {
-												   if (b) passw.push_back(data[i]);
-												   else uname.push_back(data[i]);
-												   }
-												   }*/
+	if (uname.length() > 0 && passw.length() > 0) {
 
 		ifstream fin(GetPasswFilePth(uname).c_str());
 		if (!fin.good()) {
 			string pth = "./users/";
-			_mkdir(pth.c_str());//, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+			_mkdir(pth.c_str());
 			pth += uname;
 
-			stat = _mkdir(pth.c_str());//, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+			stat = _mkdir(pth.c_str());
 			if (stat == 0) {
 				printf("Dir %s created successfully.\n", uname.c_str());
 				pth += PASSW_FILE;
@@ -555,17 +539,7 @@ string ServerWorker::LoginNewUser(const string &uname, const string &passw, bool
 	string username = "";
 	string mes;
 	res = false;
-	if (uname.length() > 0 && passw.length() > 0) {//if (data.size() > 0) {
-												   /*string uname, passw, pass2;
-												   bool b = 0;
-												   for (int i = 0; i < data.size(); i++) {
-												   if (data[i] == '@')
-												   b = 1;
-												   else {
-												   if (b) passw.push_back(data[i]);
-												   else uname.push_back(data[i]);
-												   }
-												   }*/
+	if (uname.length() > 0 && passw.length() > 0) {
 		string pass2;
 		string pth = GetPasswFilePth(uname);
 		openSem(uname);
@@ -872,7 +846,6 @@ Message** ServerWorker::ReadAllMes(const string& username, unsigned long& res)
 			buf.clear();
 			std::getline(inp, buf);
 			if (buf.size()>0)
-				//printf("read: %s\n", buf);
 				switch (state)
 				{
 				case 0: // id
@@ -1053,84 +1026,35 @@ bool ServerWorker::ListenRecv(std::string& MsgStr)
 {
 	if (td != nullptr)
 	{
-		/*HANDLE m = CreateMutex(NULL, FALSE, td->rMutexName.c_str());
-		DWORD result;
-		result = WaitForSingleObject(m, INFINITE);
-		if (result != WAIT_OBJECT_0)
-		{
-			cout << "Failed to lock mutex!" << endl;
-			return false;
-		}*/
 		MsgStr.clear();
-		//size_t len = 10;
-		while (MsgStr.length() == 0)//< TECH_DG_SIZE)
+		while (MsgStr.length() == 0)
 		{
 			HANDLE m;
 			if (LockMutex(td->rMutexName, m) && td->rBuf != nullptr)
 			{
 				MsgStr += *td->rBuf;
 				td->rBuf->clear();
-				// parse len
-				/*if (MsgStr.length() >= len)
-				{
-					string c = MsgStr.substr(0, len);
-					MsgStr = MsgStr.substr(len, MsgStr.length() - 1);
-					len = atoi(c.c_str());
-				}*/
 			}
 			UnlockMutex(m);
 			Sleep(100);
 		}
 		return true;
-		/*char c[10];
-		unsigned int size = 0;
-		int res = recv(socket, c, 10, 0);
-		if (res == 10)
-		{
-			size = atoi(c);
-			char* recvbuf = new char[size];
-			int res = recv(socket, recvbuf, size, 0);
-			printf("String received: %s\n", recvbuf);
-			printf("Received %d symbols!\n", res);
-			if (res > 0)
-			{
-				MsgStr.clear();
-				for (int i = 0; i < res; i++)
-					if (recvbuf[i] != '\n' && recvbuf[i] != '\r' && recvbuf[i] != '\t' && recvbuf[i] != '\0')
-						MsgStr.push_back(recvbuf[i]);
-			}
-		}
-		else return false;*/
 	}
 	else
 		return false;
 }
 
 void ServerWorker::sendTo(const string& message) {
-	//int res = 0;
-	
-	//printf("String to send: %s\n", s.c_str());
-	///res = send(socket, s.c_str(), s.size(), 0);
-	//if (res != s.size())
-		//printf("Send failed: %d != %d!\n", s.c_str(), s.size());*/
 	if (td != nullptr)
 	{
-		/*HANDLE m = CreateMutex(NULL, FALSE, td->sMutexName.c_str());
-		DWORD result;
-		result = WaitForSingleObject(m, INFINITE);*
-		if (result != WAIT_OBJECT_0
-		{
-			cout << "Failed to lock mutex!" << endl;
-			
-		}else*/
 		HANDLE m;
 		bool act = false;
 		while (!act)
 		{
 			if (LockMutex(td->sMutexName, m) && td->sBuf != nullptr)
 			{
-				//*td->sBuf = message;
 				*td->sBuf = message;
+				cout << "ServerWorker - " << message << endl;
 				act = true;
 			}
 			UnlockMutex(m);
@@ -1142,7 +1066,7 @@ void ServerWorker::sendTo(const string& message) {
 string ServerWorker::serialize(STATE opcode, unsigned short numarg, const string * ss)
 {
 	stringstream sstr;
-	sstr << API[opcode] << DELIM_PARSE << numarg << DELIM_PARSE;
+	sstr << (int)opcode << DELIM_PARSE << (int)numarg << DELIM_PARSE;
 	if (numarg > 0 && ss != NULL)
 		for (int i = 0; i <= numarg - 1; i++)
 		{
@@ -1203,56 +1127,16 @@ STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* &
 STATE ServerWorker::parseOpCode(const string& buf)
 {
 	STATE res = NO_OPERATION;
-
-	if (buf.compare(API[0]) == 0)
-		return SERV_OK;
-	else if (buf.compare(API[1]) == 0)
-		return NO_OPERATION;
-	else if (buf.compare(API[2]) == 0)
-		return ANSWER;
-	else if (buf.compare(API[3]) == 0)
-		return START;
-	else if (buf.compare(API[4]) == 0)
-		return INIT;
-	else if (buf.compare(API[5]) == 0)
-		return OPCODE;
-	else if (buf.compare(API[6]) == 0)
-		return EXIT;
-	else if (buf.compare(API[7]) == 0)
-		return REG;
-	else if (buf.compare(API[8]) == 0)
-		return LOG;
-	else if (buf.compare(API[9]) == 0)
-		return LUG;
-	else if (buf.compare(API[10]) == 0)
-		return SND;
-	else if (buf.compare(API[11]) == 0)
-		return DEL_US;
-	else if (buf.compare(API[12]) == 0)
-		return DEL_MES;
-	else if (buf.compare(API[13]) == 0)
-		return SH_UNR;
-	else if (buf.compare(API[14]) == 0)
-		return SH_ALL;
-	else if (buf.compare(API[15]) == 0)
-		return SH_EX;
-	else if (buf.compare(API[16]) == 0)
-		return RSND;
-	else if (buf.compare(API[17]) == 0)
-		return INSYS;
-
+	if (API_SIZE > 0)
+		for (int i = 0; i < API_SIZE; i++)
+			if (atoi(buf.c_str()) == i)
+				return static_cast<STATE>(i);
 	return res;
 }
 
 void ServerWorker::closeSocket()
 {
-	/*sendTo("Closing connection.");
-	if (shutdown(socket, SD_BOTH) < 0)
-		printf("Socket #%d shutdown failed\n", socket);
-	if (closesocket(socket) < 0)
-		printf("Socket #%d close failed\n", socket);*/
-	//WSACleanup();
-	// TODO:
+
 }
 
 bool ServerWorker::LockMutex(HANDLE& m)

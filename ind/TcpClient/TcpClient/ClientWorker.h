@@ -28,7 +28,7 @@ public:
 	static DWORD WINAPI runner(LPVOID args);
 	void sendTo(SOCKET s, const string& message);
 	bool ListenRecv(SOCKET s, std::string& MsgStr);
-	string serialize(unsigned int opcode, unsigned short numarg, const string* ss);
+	string serialize(STATE opcode, unsigned short numarg, const string* ss);
 	//STATE ClientWorker::parse(const string& input, unsigned short& numarg, string* args);
 	STATE parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);
