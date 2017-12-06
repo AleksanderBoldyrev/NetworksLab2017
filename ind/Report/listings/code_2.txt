@@ -1,0 +1,9 @@
+bool* flags = new bool[cSize];
+int flagsSize = cSize;
+for (int i = 0; i < cSize; i++)
+	flags[i] = false;
+
+...
+
+// add this line after that 'flags' variable is not used anymore. 
+delete[] flags;

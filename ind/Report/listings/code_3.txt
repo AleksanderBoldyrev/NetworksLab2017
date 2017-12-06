@@ -1,0 +1,5 @@
+typedef unsigned short  USHORT;
+
+// For example, change to this
+
+typedef unsigned short  UN_SHORT;

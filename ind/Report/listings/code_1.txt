@@ -1,0 +1,55 @@
+Enter <host>:<port> of Mail Server: 192.168.0.200:5555
+Connected to server successfully.
+
+* MAIL *
+Select the following items:
+2 - Exit
+3 - Register
+4 - Login
+Enter your option: 
+4
+
+You are about to sign in. Enter the <username>: qwe
+Enter the <password>: qwe
+
+User signed in successfully. Press any key.
+
+* MAIL *
+Select the following items:
+1 - Send message
+2 - Exit
+3 - Register
+4 - Logout
+5 - Delete user
+6 - Show unread messages
+7 - Show all messages
+8 - Show the exact message
+9 - Delete message
+10 - Resend message
+
+7
+Showing all messages.
+
+Message with ID = 1
+ID: 1
+TIME: Sun Dec  3 15:51:33 2017
+FROM: 123
+LEN: 21
+STATE: Normal
+BODY: jklaskldhakjshdkajdsh
+
+
+
+Press any key.
+* MAIL *
+Select the following items:
+1 - Send message
+2 - Exit
+3 - Register
+4 - Logout
+5 - Delete user
+6 - Show unread messages
+7 - Show all messages
+8 - Show the exact message
+9 - Delete message
+10 - Resend message
