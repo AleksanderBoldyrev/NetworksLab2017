@@ -54,6 +54,7 @@ void ClientWorker::startThread(string* params)
 {
 	DWORD t;
 	tHandle = CreateThread(0, 0, runner, params, 0, &t);
+	WaitForSingleObject(tHandle, INFINITE);
 }
 
 void ClientWorker::stopThread()
@@ -95,10 +96,6 @@ void ClientWorker::ListenLoop(const int& socket)
 	bool dr = false;
 	bool df = false;
 	bool ds = false;
-	//string servok;
-	//stringstream ss;
-	//ss << STATE::SERV_OK;
-	//servok = ss.str();
 
 	string uname;
 	Message m;
@@ -123,11 +120,10 @@ void ClientWorker::ListenLoop(const int& socket)
 			{
 				if (numArgCount > 0 && args != nullptr)
 				{
-					if (strcmp(args[0].c_str(), API[STATE::SERV_OK].c_str()) == 0)
+					if (atoi(args[0].c_str()) == STATE::SERV_OK)
 					{
 						cout << "Connected to server successfully." << endl;
 						state = STATE::INIT;
-						_getch();
 					}
 					else
 					{
@@ -179,10 +175,6 @@ void ClientWorker::ListenLoop(const int& socket)
 					df = false;
 					printf("Not valid operation number.");
 					_getch();
-
-					//sendTo(socket, serialize(STATE::INIT, 0, nullptr));
-					//ListenRecv(socket, buf);
-					//answerCode = parse(buf, numArgCount, args);
 				}
 			}
 			break;
@@ -216,7 +208,7 @@ void ClientWorker::ListenLoop(const int& socket)
 					{
 						if (numArgCount > 0 && args != nullptr)
 						{
-							if (args[0].compare(API[STATE::SERV_OK]) == 0)
+							if (atoi(args[0].c_str()) == STATE::SERV_OK)
 							{
 								dr = true;
 								state = STATE::INIT;
@@ -269,7 +261,7 @@ void ClientWorker::ListenLoop(const int& socket)
 					{
 						if (numArgCount > 0 && args != nullptr)
 						{
-							if (args[0].compare(API[STATE::SERV_OK]) == 0)
+							if (atoi(args[0].c_str()) == STATE::SERV_OK)
 							{
 								dr = true;
 								state = STATE::INSYS;
@@ -353,7 +345,7 @@ void ClientWorker::ListenLoop(const int& socket)
 			sendTo(socket, serialize(STATE::LUG, 0, nullptr));
 			ListenRecv(socket, buf);
 			answerCode = parse(buf, numArgCount, args);
-			if (args[0].compare(API[STATE::SERV_OK]) == 0)
+			if (atoi(args[0].c_str()) == STATE::SERV_OK)
 			{
 				cout << "Log out successfully. Press any key." << endl;
 				state = STATE::INIT;
@@ -381,7 +373,7 @@ void ClientWorker::ListenLoop(const int& socket)
 				{
 					if (numArgCount > 0 && args != nullptr)
 					{
-						if (args[0].compare(API[STATE::SERV_OK]) == 0)
+						if (atoi(args[0].c_str()) == STATE::SERV_OK)
 						{
 							if (m.deserialize(args[1]))
 							{
@@ -423,7 +415,7 @@ void ClientWorker::ListenLoop(const int& socket)
 			{
 				if (numArgCount > 0 && args != nullptr)
 				{
-					if (args[0].compare(API[STATE::SERV_OK]) == 0)
+					if (atoi(args[0].c_str()) == STATE::SERV_OK)
 					{
 						cout << "User <" << uname << "> deleted successfully." << endl;
 						cout << "\nPress any key." << endl;
@@ -467,7 +459,7 @@ void ClientWorker::ListenLoop(const int& socket)
 				{
 					if (numArgCount > 0 && args != nullptr)
 					{
-						if (args[0].compare(API[STATE::SERV_OK]) == 0)
+						if (atoi(args[0].c_str()) == STATE::SERV_OK)
 						{
 							cout << "Message <" << mesId << "> deleted successfully." << endl;
 							cout << "\nPress any key." << endl;
@@ -504,7 +496,7 @@ void ClientWorker::ListenLoop(const int& socket)
 			{
 				if (numArgCount > 0 && args != nullptr)
 				{
-					if (args[0].compare(API[STATE::SERV_OK]) == 0)
+					if (atoi(args[0].c_str()) == STATE::SERV_OK)
 					{
 						for (int i = 1; i < numArgCount; i++)
 						{
@@ -548,7 +540,7 @@ void ClientWorker::ListenLoop(const int& socket)
 			{
 				if (numArgCount > 0 && args != nullptr)
 				{
-					if (args[0].compare(API[STATE::SERV_OK]) == 0)
+					if (atoi(args[0].c_str()) == STATE::SERV_OK)
 					{
 						for (int i = 1; i < numArgCount; i++)
 						{
@@ -600,7 +592,7 @@ void ClientWorker::ListenLoop(const int& socket)
 				{
 					if (numArgCount > 0 && args != nullptr)
 					{
-						if (args[0].compare(API[STATE::SERV_OK]) == 0)
+						if (atoi(args[0].c_str()) == STATE::SERV_OK)
 						{
 							if (m.deserialize(args[1]))
 							{
@@ -654,7 +646,7 @@ void ClientWorker::ListenLoop(const int& socket)
 				{
 					if (numArgCount > 1 && args != nullptr)
 					{
-						if (args[0].compare(API[STATE::SERV_OK]) == 0)
+						if (atoi(args[0].c_str()) == STATE::SERV_OK)
 						{
 							if (m.deserialize(args[1]))
 							{
@@ -720,7 +712,7 @@ string ClientWorker::MessageToString(const Message& m)
 string ClientWorker::serialize(unsigned int opcode, unsigned short numarg, const string * ss)
 {
 	stringstream sstr;
-	sstr << API[opcode] << DELIM_PARSE << numarg << DELIM_PARSE;
+	sstr << opcode << DELIM_PARSE << numarg << DELIM_PARSE;
 	if (numarg > 0 && ss != nullptr)
 		for (int i = 0; i < numarg; i++)
 		{
@@ -731,9 +723,9 @@ string ClientWorker::serialize(unsigned int opcode, unsigned short numarg, const
 	return sstr.str();
 }
 
-unsigned int ClientWorker::parse(const string& input, unsigned short& numarg, string* &args)
+STATE ClientWorker::parse(const string& input, unsigned short& numarg, string* &args)
 {
-	unsigned int res = STATE::NO_OPERATION;
+	STATE res = STATE::NO_OPERATION;
 	if (input.size() > 0)
 	{
 		stringstream buf;
@@ -780,19 +772,19 @@ unsigned int ClientWorker::parse(const string& input, unsigned short& numarg, st
 	return res;
 }
 
-int ClientWorker::parseOpCode(const string& buf)
+STATE ClientWorker::parseOpCode(const string& buf)
 {
 	if (API_SIZE > 0)
 		for (int i = 0; i < API_SIZE; i++)
-			if (buf.compare(API[i]) == 0)
-				return i;
+			if (atoi(buf.c_str()) == i)
+				return static_cast<STATE>(i);
 	return STATE::NO_OPERATION;
 }
 
 void ClientWorker::run(string host, unsigned short port)
 {
 	printf("Starting new client thread with HOST=%s, PORT=%u\n", host.c_str(), port);
-	isRunning = true;
+	//isRun = true;
 	int n;
 	WSADATA wsaData;
 	n = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -828,16 +820,16 @@ void ClientWorker::run(string host, unsigned short port)
 				else
 				{
 					ListenLoop(sockfd);
-					//n = shutdown(sockfd, SD_BOTH);
-					//if (n == SOCKET_ERROR) {
-						//printf("shutdown failed: %d\n", WSAGetLastError());
-						//closesocket(sockfd);
-						//WSACleanup();
-					//}
+					n = shutdown(sockfd, SD_BOTH);
+					if (n == SOCKET_ERROR) {
+						printf("shutdown failed: %d\n", WSAGetLastError());
+						closesocket(sockfd);
+						WSACleanup();
+					}
+					else printf("Connection closed successfully. Bye!\n");
 				}
 				closesocket(sockfd);
 				WSACleanup();
-				isRunning = false;
 			}
 		}
 	}
@@ -883,7 +875,7 @@ bool ClientWorker::ListenRecv(SOCKET socket, std::string& MsgStr)
 		{
 			MsgStr.clear();
 			for (int i = 0; i < res; i++)
-                                if (recvbuf[i] != '\r' && recvbuf[i] != '\0')
+				if (recvbuf[i] != '\n' && recvbuf[i] != '\r' && recvbuf[i] != '\t' && recvbuf[i] != '\0')
 					MsgStr.push_back(recvbuf[i]);
 		}
 	}
