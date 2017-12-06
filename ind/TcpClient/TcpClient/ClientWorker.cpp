@@ -180,9 +180,6 @@ void ClientWorker::ListenLoop(const int& socket)
 					printf("Not valid operation number.");
 					_getch();
 
-					//sendTo(socket, serialize(STATE::INIT, 0, nullptr));
-					//ListenRecv(socket, buf);
-					//answerCode = parse(buf, numArgCount, args);
 				}
 			}
 			break;
@@ -872,7 +869,6 @@ bool ClientWorker::ListenRecv(SOCKET socket, std::string& MsgStr)
 	if (ssize == 10)
 	{
 		size = atoi(c);
-		//char* recvbuf = (char*)malloc((size)*sizeof(char));
 		char* recvbuf = new char[size];
 
 		int res = recv(socket, recvbuf, size, 0);
