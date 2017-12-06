@@ -864,7 +864,6 @@ bool ClientWorker::ListenRecv(SOCKET socket, std::string& MsgStr)
 	if (ssize == 10)
 	{
 		size = atoi(c);
-		//char* recvbuf = (char*)malloc((size)*sizeof(char));
 		char* recvbuf = new char[size];
 
 		int res = recv(socket, recvbuf, size, 0);
