@@ -19,12 +19,13 @@
 #include "stdinc.h"
 #include "API.h"
 
+#define SEMAP_TIMEOUT		100
+
 #define USERS_FOLDER "./users/"
 #define MESSAGE_FILE "/messages"
 #define PASSW_FILE   "/password"
 
 typedef unsigned short  USHORT;
-//typedef int             SOCKET;
 
 using namespace std;
 
@@ -34,10 +35,10 @@ public:
 	ServerWorker();
 	~ServerWorker();
 
-	void init(ThreadData* data);
-	bool mainLoop();
+	void Init(ThreadData* data);
+	bool MainLoop();
 private:
-	void sendTo(const string& message);
+	void SendTo(const string& message);
 	ThreadData* td;
 	string GetPasswFilePth(const string& username);
 	string GetMessageFilePth(const string& username);
@@ -55,23 +56,24 @@ private:
 	Message* ReadOneMes(const string& username, const unsigned long& id, bool& res);
 	bool DeleteOneMes(const string& username, const unsigned long& id);
 	bool WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode);//const Message** m, const unsigned long& size);
-	bool checkUser(const string& name);
+	bool CheckUser(const string& name);
 	unsigned long LastMesID(const string& username);
-	STATE parseOpCode(const string& buf);
-	string serialize(STATE opcode, unsigned short numarg, const string * ss);
-	STATE parse(const string& input, unsigned short& numarg, string* &args);
+	STATE ParseOpCode(const string& buf);
+	string Serialize(STATE opcode, unsigned short numarg, const string * ss);
+	STATE Parse(const string& input, unsigned short& numarg, string* &args);
 
 	void WriteToFile(const string& username, Message* message);
 
-	void openSem(const string& name);
-	void closeSem(const string& name);
+	void OpenSem(const string& name);
+	void CloseSem(const string& name);
 
-	bool ListenRecv(std::string& MsgStr);
-	void closeSocket();
+	bool ListenInBuf(std::string& MsgStr);
+	void CloseSocket();
 
 	static bool LockMutex(HANDLE& m);
 	static void UnlockMutex(HANDLE& m);
 	static bool LockMutex(const wstring& name, HANDLE& m);
+	HANDLE sem; // описатель семафора
 };
 
 

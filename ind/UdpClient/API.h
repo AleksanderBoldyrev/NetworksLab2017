@@ -11,7 +11,7 @@ using namespace std;
 #define EOF_SYM (char)2
 
 #define UDP_DG_LEN      32     // UNICODE symbol count in one packet.
-#define TECH_DG_SIZE    10      // Char count, in which the length of the packet and it's number are secured.
+#define TECH_DG_SIZE    10     // Char count, in which the length of the packet and it's number are secured.
 
 #define OPENT "Enter your option: "
 
@@ -50,7 +50,7 @@ enum STATE
 	EXIT,
 	REG,
 	LOG,
-	LUG,
+	LOGOUT,
 	SND,
 	DEL_US,
 	DEL_MES,

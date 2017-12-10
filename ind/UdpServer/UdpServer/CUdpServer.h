@@ -6,7 +6,6 @@
 #include "ServerWorker.h"
 
 typedef unsigned short  USHORT;
-//typedef int             SOCKET;
 typedef int             ClientID;
 
 #define PRINT_DEADLOCK
@@ -23,22 +22,17 @@ public:
 	CUdpServer(const CUdpServer& orig);
 	virtual ~CUdpServer();
 	void StartAccept(USHORT Port);
-	//void StartListenTh(SOCKET Sock);
 private:
-	//ThreadInfo AcceptThInfo;
-	//ClientID LastClientID;
 	ThreadData* clients;
-	//SOCKET AcceptSock;
 	HANDLE Mut;
-	HANDLE serverThread;
+	HANDLE ServerThread;
 	static bool LockMutex(HANDLE& m);
 	static void UnlockMutex(HANDLE& m);
 	static bool LockMutex(const wstring& name, HANDLE& m);
 	unsigned int clientsSize = 0;
 	static DWORD WINAPI AcceptThread(LPVOID pParam);
 	static DWORD WINAPI ListenThread(LPVOID pParam);
-	static void processInput(const SOCKET& s, ThreadData* &clients, unsigned int& cSize);
-	static void processOutput(const SOCKET& s, ThreadData* clients, const unsigned int& cSize);
-	static unsigned int checkClient(const sockaddr_in& saddr, ThreadData* &clients, unsigned int& cSize);
-	//static string intToStr(const unsigned int& val);
+	static void ProcessInput(const SOCKET& s, ThreadData* &clients, unsigned int& cSize);
+	static void ProcessOutput(const SOCKET& s, ThreadData* clients, const unsigned int& cSize);
+	static unsigned int CheckClient(const sockaddr_in& saddr, ThreadData* &clients, unsigned int& cSize);
 };

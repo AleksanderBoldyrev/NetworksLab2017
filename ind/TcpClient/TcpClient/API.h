@@ -44,7 +44,7 @@ enum STATE
 	EXIT,
 	REG,
 	LOG,
-	LUG,
+	LOGOUT,
 	SND,
 	DEL_US,
 	DEL_MES,
@@ -136,10 +136,10 @@ public:
 		}
 		if (numarg == MESSAGE_FIELDS_COUNT && args != NULL)
 		{
-			id = strtoul(args[0].c_str(), NULL, 10);
+			id = stoul(args[0].c_str(), NULL, 10);
 			username = args[1];
 			date_time = args[2];
-			len = strtoul(args[3].c_str(), NULL, 10);
+			len = stoul(args[3].c_str(), NULL, 10);
 			state = atoi(args[4].c_str());
 			body = args[5];
 		}

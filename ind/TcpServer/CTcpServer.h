@@ -86,11 +86,6 @@ struct ClientInfo
 
 bool ListenProc(ListenThInput& pData,int& State,int& CurQst,int& result);
 bool ListenRecv(ClientID& From, std::string& MsgStr,ListenThInput& pData);
-bool register_user(char* user_name,CTcpServer* pData,ClientID id);
-
-typedef std::map<ClientID,ClientInfo> ClientsMapArray;
-typedef std::map<ClientID,ClientInfo>::iterator ClientsMapArrayIt;
-typedef std::pair<ClientID,ClientInfo> ClientsPair;
 
 class CTcpServer {
 public:

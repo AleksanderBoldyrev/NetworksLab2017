@@ -1,9 +1,3 @@
-/*
-* To change this license header, choose License Headers in Project Properties.
-* To change this template file, choose Tools | Templates
-* and open the template in the editor.
-*/
-
 #include <algorithm>
 
 #include "ServerWorker.h"
@@ -13,14 +7,78 @@ ServerWorker::ServerWorker() {
 
 ServerWorker::~ServerWorker()
 {
-	closeSocket();
+	CloseSocket();
 }
 
-void ServerWorker::init(ThreadData* data) {
+void ServerWorker::Init(ThreadData* data) {
 	td = data;
 }
 
-bool ServerWorker::mainLoop() {
+string Message::Serialize()
+{
+	stringstream ss;
+	ss << id << DELIM_SERIALIZE;
+	ss << username << DELIM_SERIALIZE;
+	ss << date_time << DELIM_SERIALIZE;
+	ss << len << DELIM_SERIALIZE;
+	ss << state << DELIM_SERIALIZE;
+	std::replace(body.begin(), body.end(), DELIM_SERIALIZE, ' ');
+	ss << body << DELIM_SERIALIZE;
+	return ss.str();
+};
+
+bool Message::Deserialize(const string& input)
+{
+	bool res = true;
+	int numarg = 0;
+	string* args = nullptr;
+	if (input.size() > 0)
+	{
+		stringstream buf;
+		numarg = 0;
+		// find all delimeters
+		for (int i = 0; i < input.size(); i++)
+		{
+			if (input[i] == DELIM_SERIALIZE)
+				numarg++;
+		}
+		// find all parts
+		if (numarg > 0)
+		{
+			args = new string[numarg];
+			unsigned short cc = 0;
+			for (int i = 0; i < input.size(); i++)
+			{
+				if (input[i] == DELIM_SERIALIZE)
+				{
+					args[cc] = buf.str();
+					cc++;
+					buf.str(std::string());
+				}
+				else
+				{
+					buf << input[i];
+				}
+			}
+		}
+	}
+	if (numarg == MESSAGE_FIELDS_COUNT && args != NULL)
+	{
+		id = strtoul(args[0].c_str(), NULL, 10);
+		username = args[1];
+		date_time = args[2];
+		len = strtoul(args[3].c_str(), NULL, 10);
+		state = atoi(args[4].c_str());
+		body = args[5];
+	}
+	else
+		res = false;
+	if (args != nullptr)
+		delete[] args;
+	return res;
+}
+
+bool ServerWorker::MainLoop() {
 	STATE State = NO_OPERATION;
 	string MsgStr;
 	string MessageBuf;
@@ -52,14 +110,14 @@ bool ServerWorker::mainLoop() {
 		bool res = ListenRecv(MsgStr);
 		if (res)
 		{
-			State = parse(MsgStr, numarg, args);
+			State = Parse(MsgStr, numarg, args);
 			switch (State)
 			{
 			case START:
 				args2 = new string[1];
 				args2[0] = to_string(SERV_OK);
-				ff = serialize(ANSWER, 1, args2);
-				sendTo(ff);
+				ff = Serialize(ANSWER, 1, args2);
+				SendTo(ff);
 				delete[] args2;
 				break;
 			case EXIT:
@@ -73,7 +131,7 @@ bool ServerWorker::mainLoop() {
 					{
 						args2 = new string[1];
 						args2[0] = to_string(SERV_OK);
-						sendTo(serialize(ANSWER, 1, args2));
+						SendTo(Serialize(ANSWER, 1, args2));
 						delete[] args2;
 					}
 					else
@@ -81,7 +139,7 @@ bool ServerWorker::mainLoop() {
 						args2 = new string[2];
 						args2[0] = to_string(NO_OPERATION);
 						args2[1] = errMessage;
-						sendTo(serialize(ANSWER, 2, args2));
+						SendTo(Serialize(ANSWER, 2, args2));
 						delete[] args2;
 					}
 				}
@@ -90,7 +148,7 @@ bool ServerWorker::mainLoop() {
 					args2 = new string[2];
 					args2[0] = to_string(NO_OPERATION);
 					args2[1] = "Not valid args.";
-					sendTo(serialize(ANSWER, 2, args2));
+					SendTo(Serialize(ANSWER, 2, args2));
 					delete[] args2;
 				}
 				break;
@@ -102,7 +160,7 @@ bool ServerWorker::mainLoop() {
 					{
 						args2 = new string[1];
 						args2[0] = to_string(SERV_OK);
-						sendTo(serialize(ANSWER, 1, args2));
+						SendTo(Serialize(ANSWER, 1, args2));
 						currentUserName = args[0];
 						delete[] args2;
 					}
@@ -111,7 +169,7 @@ bool ServerWorker::mainLoop() {
 						args2 = new string[2];
 						args2[0] = to_string(NO_OPERATION);
 						args2[1] = errMessage;
-						sendTo(serialize(ANSWER, 2, args2));
+						SendTo(Serialize(ANSWER, 2, args2));
 						delete[] args2;
 					}
 				}
@@ -120,7 +178,7 @@ bool ServerWorker::mainLoop() {
 					args2 = new string[2];
 					args2[0] = to_string(NO_OPERATION);
 					args2[1] = "Not valid args.";
-					sendTo(serialize(ANSWER, 2, args2));
+					SendTo(Serialize(ANSWER, 2, args2));
 					delete[] args2;
 				}
 				break;
@@ -129,7 +187,7 @@ bool ServerWorker::mainLoop() {
 				currentUserName = "";
 				args2 = new string[1];
 				args2[0] = to_string(SERV_OK);
-				sendTo(serialize(ANSWER, 1, args2));
+				SendTo(Serialize(ANSWER, 1, args2));
 				delete[] args2;
 				break;
 			case SND:
@@ -137,7 +195,7 @@ bool ServerWorker::mainLoop() {
 				if (args != NULL && numarg > 1)
 				{
 					m = new Message();
-					if (m->deserialize(args[1]) && args[0].size() > 0)
+					if (m->Deserialize(args[1]) && args[0].size() > 0)
 					{
 						if (currentUserName.size() > 0) { mesId = AddMessage(m, args[0], currentUserName, errMessage); }
 						else { mesId = 0; }
@@ -146,7 +204,7 @@ bool ServerWorker::mainLoop() {
 							args2 = new string[2];
 							args2[0] = to_string(NO_OPERATION);
 							args2[1] = "Error while sending the message [" + errMessage + "]";
-							sendTo(serialize(ANSWER, 2, args2));
+							SendTo(Serialize(ANSWER, 2, args2));
 							delete[] args2;
 						}
 						else
@@ -154,8 +212,8 @@ bool ServerWorker::mainLoop() {
 							args2 = new string[2];
 							m->body = "";
 							args2[0] = to_string(SERV_OK);
-							args2[1] = m->serialize();
-							sendTo(serialize(ANSWER, 2, args2));
+							args2[1] = m->Serialize();
+							SendTo(Serialize(ANSWER, 2, args2));
 							delete[] args2;
 						}
 					}
@@ -179,7 +237,7 @@ bool ServerWorker::mainLoop() {
 						args2[0] = to_string(NO_OPERATION);
 						args2[1] = errMessage;
 					}
-					sendTo(serialize(ANSWER, 2, args2));
+					SendTo(Serialize(ANSWER, 2, args2));
 					delete[] args2;
 				}
 				break;
@@ -202,7 +260,7 @@ bool ServerWorker::mainLoop() {
 							args2[0] = to_string(NO_OPERATION);
 							args2[1] = errMessage;
 						}
-						sendTo(serialize(ANSWER, 2, args2));
+						SendTo(Serialize(ANSWER, 2, args2));
 						delete[] args2;
 					}
 				}
@@ -223,7 +281,6 @@ bool ServerWorker::mainLoop() {
 							{
 								if (mm[i] != NULL)
 								{
-									//buf.append(MessageToString(m[i][0]));
 									if (mm[i][0].state == MSTATE_UNREAD)
 									{
 										unread++;
@@ -237,13 +294,13 @@ bool ServerWorker::mainLoop() {
 							{
 								if (mm[i][0].state == MSTATE_UNREAD)
 								{
-									args2[cc] = mm[i][0].serialize();
+									args2[cc] = mm[i][0].Serialize();
 									changes = true;
 									mm[i][0].state = MSTATE_NORMAL;
 									cc++;
 								}
 							}
-							if (unread > 0) sendTo(serialize(ANSWER, unread + 1, args2));
+							if (unread > 0) SendTo(Serialize(ANSWER, unread + 1, args2));
 							if (changes) WriteMessages(currentUserName, mm, size, true);
 							for (unsigned long i = 0; i<size; i++)
 							{
@@ -262,7 +319,7 @@ bool ServerWorker::mainLoop() {
 						args2 = new string[2];
 						args2[0] = to_string(NO_OPERATION);
 						args2[1] = "Error while showing unread the messages. No messages found.";
-						sendTo(serialize(ANSWER, 2, args2));
+						SendTo(Serialize(ANSWER, 2, args2));
 						delete[] args2;
 					}
 				}
@@ -286,7 +343,7 @@ bool ServerWorker::mainLoop() {
 							{
 								if (mm[i - 1] != NULL)
 								{
-									args2[i] = mm[i - 1][0].serialize();
+									args2[i] = mm[i - 1][0].Serialize();
 									if (mm[i - 1][0].state == MSTATE_UNREAD)
 									{
 										mm[i - 1][0].state = MSTATE_NORMAL;
@@ -294,7 +351,7 @@ bool ServerWorker::mainLoop() {
 									}
 								}
 							}
-							sendTo(serialize(ANSWER, size + 1, args2));
+							SendTo(Serialize(ANSWER, size + 1, args2));
 							if (changes) WriteMessages(currentUserName, mm, size, true);
 							for (unsigned long i = 0; i<size; i++)
 							{
@@ -313,7 +370,7 @@ bool ServerWorker::mainLoop() {
 						args2 = new string[2];
 						args2[0] = to_string(NO_OPERATION);
 						args2[1] = "Error while showing all messages.";
-						sendTo(serialize(ANSWER, 2, args2));
+						SendTo(Serialize(ANSWER, 2, args2));
 						delete[] args2;
 					}
 				}
@@ -336,12 +393,11 @@ bool ServerWorker::mainLoop() {
 							{
 								if (mm[i] != NULL)
 								{
-									//buf.append(MessageToString(m[i][0]));
 									if (mm[i][0].id == mesId)
 									{
 										args2 = new string[2];
 										args2[0] = to_string(SERV_OK);
-										args2[1] = mm[i][0].serialize();
+										args2[1] = mm[i][0].Serialize();
 										mesFound = true;
 										if (mm[i][0].state == MSTATE_UNREAD)
 										{
@@ -351,7 +407,7 @@ bool ServerWorker::mainLoop() {
 									}
 								}
 							}
-							if (mesFound) sendTo(serialize(ANSWER, 2, args2));
+							if (mesFound) SendTo(Serialize(ANSWER, 2, args2));
 							if (changes) WriteMessages(currentUserName, mm, size, true);
 							for (unsigned long i = 0; i<size; i++)
 							{
@@ -370,7 +426,7 @@ bool ServerWorker::mainLoop() {
 						args2 = new string[2];
 						args2[0] = to_string(NO_OPERATION);
 						args2[1] = "Error while showing the messages. No messages found.";
-						sendTo(serialize(ANSWER, 2, args2));
+						SendTo(Serialize(ANSWER, 2, args2));
 						delete[] args2;
 					}
 				}
@@ -401,18 +457,17 @@ bool ServerWorker::mainLoop() {
 										{
 											args2[0] = to_string(NO_OPERATION);
 											args2[1] = "Error while resending the messages. Aim user not found.";
-											//sendTo(serialize(ANSWER, 2, args2));
 										}
 										else
 										{
 											args2[0] = to_string(SERV_OK);
-											args2[1] = mm[i][0].serialize();
+											args2[1] = mm[i][0].Serialize();
 										}
 										mesFound = true;
 									}
 								}
 							}
-							if (mesFound) sendTo(serialize(ANSWER, 2, args2));
+							if (mesFound) SendTo(Serialize(ANSWER, 2, args2));
 							for (unsigned long i = 0; i<size; i++)
 							{
 								if (mm[i] != NULL)
@@ -430,7 +485,7 @@ bool ServerWorker::mainLoop() {
 						args2 = new string[2];
 						args2[0] = to_string(NO_OPERATION);
 						args2[1] = "Error while resending the messages. Message not found.";
-						sendTo(serialize(ANSWER, 2, args2));
+						SendTo(Serialize(ANSWER, 2, args2));
 						delete[] args2;
 					}
 				}
@@ -444,25 +499,16 @@ bool ServerWorker::mainLoop() {
 	return true;
 }
 
-void ServerWorker::openSem(const string& name)
+void ServerWorker::OpenSem(const string& name)
 {
-	//sem_t *sem = sem_open(name.c_str(), O_CREAT | O_EXCL, 0644, 1);
-	//sem_wait(sem_open(name.c_str(), O_CREAT, 0644, 1));
-	///if (sem != NULL)
-		//sem_wait(sem);
-	//int fd_lock = open(LOCK_FILE, O_CREAT);
-	//flock(fd_lock, LOCK_EX);
-	// do stuff
-	//flock(fd_lock, LOCK_UN);
+	sem = CreateSemaphore(NULL, 1, 1, (LPCWSTR)name.c_str());
+	DWORD result;
+	result = WaitForSingleObject(sem, SEMAP_TIMEOUT);
 }
 
-void ServerWorker::closeSem(const string& name)
+void ServerWorker::CloseSem(const string& name)
 {
-	//sem_t *sem = sem_open(name.c_str(), O_EXCL, 0644, 1);
-	//sem_wait(sem_open(name.c_str(), O_CREAT, 0644, 1));
-//	if (sem != NULL)
-	//	sem_post(sem);
-	//sem_post(sem_open(name.c_str(), O_CREAT, 0644, 1));
+	CloseHandle(sem);
 }
 
 string ServerWorker::GetPasswFilePth(const string& username) {
@@ -613,7 +659,7 @@ unsigned long ServerWorker::AddMessage(Message* message, const string& username,
 
 void ServerWorker::WriteToFile(const string& username, Message* message)
 {
-	openSem(username);
+	OpenSem(username);
 	ofstream out(GetMessageFilePth(username).c_str(), ios_base::app);
 	if (out.good() && message != NULL) {
 		out << MES_ID << message->id << endl;
@@ -625,7 +671,7 @@ void ServerWorker::WriteToFile(const string& username, Message* message)
 
 	}
 	out.close();
-	closeSem(username);
+	CloseSem(username);
 }
 
 bool ServerWorker::WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode)//const Message** m, const unsigned long& size)
@@ -1022,7 +1068,7 @@ bool ServerWorker::DeleteOneMes(const string& username, const unsigned long& id)
 	return res;
 }
 
-bool ServerWorker::ListenRecv(std::string& MsgStr)
+bool ServerWorker::ListenInBuf(std::string& MsgStr)
 {
 	if (td != nullptr)
 	{
@@ -1044,7 +1090,7 @@ bool ServerWorker::ListenRecv(std::string& MsgStr)
 		return false;
 }
 
-void ServerWorker::sendTo(const string& message) {
+void ServerWorker::SendTo(const string& message) {
 	if (td != nullptr)
 	{
 		HANDLE m;
@@ -1063,7 +1109,7 @@ void ServerWorker::sendTo(const string& message) {
 }
 
 
-string ServerWorker::serialize(STATE opcode, unsigned short numarg, const string * ss)
+string ServerWorker::Serialize(STATE opcode, unsigned short numarg, const string * ss)
 {
 	stringstream sstr;
 	sstr << (int)opcode << DELIM_PARSE << (int)numarg << DELIM_PARSE;
@@ -1077,7 +1123,7 @@ string ServerWorker::serialize(STATE opcode, unsigned short numarg, const string
 	return sstr.str();
 }
 
-STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* &args)
+STATE ServerWorker::Parse(const string& input, unsigned short& numarg, string* &args)
 {
 	STATE res = NO_OPERATION;
 	if (input.size() > 0)
@@ -1117,24 +1163,25 @@ STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* &
 				}
 			}
 			// args[0] is operation code
-			res = parseOpCode(opcodeBuf);
+			res = ParseOpCode(opcodeBuf);
 			numarg -= 2;
 		}
 	}
 	return res;
 }
 
-STATE ServerWorker::parseOpCode(const string& buf)
+STATE ServerWorker::ParseOpCode(const string& buf)
 {
-	STATE res = NO_OPERATION;
+	int res = atoi(buf.c_str());
+	STATE st = NO_OPERATION;
 	if (API_SIZE > 0)
 		for (int i = 0; i < API_SIZE; i++)
-			if (atoi(buf.c_str()) == i)
+			if (res == i)
 				return static_cast<STATE>(i);
-	return res;
+	return st;
 }
 
-void ServerWorker::closeSocket()
+void ServerWorker::CloseSocket()
 {
 
 }

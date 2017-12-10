@@ -13,54 +13,76 @@ ServerWorker::ServerWorker() {
 
 ServerWorker::~ServerWorker()
 {
-    closeSocket();
+    CloseSocket();
 }
 
-void ServerWorker::init(SOCKET s) {
+void ServerWorker::Init(SOCKET s) {
     socket = s;
 }
 
+string Message::Serialize()
+    {
+        stringstream ss;
+        ss << id << DELIM_SERIALIZE;
+        ss << username << DELIM_SERIALIZE;
+        ss << date_time << DELIM_SERIALIZE;
+        ss << len << DELIM_SERIALIZE;
+        ss << state << DELIM_SERIALIZE;
+        std::replace(body.begin(), body.end(), DELIM_SERIALIZE, ' ');
+        ss << body << DELIM_SERIALIZE;
+        return ss.str();
+    };
 
-std::string itoa(int value, unsigned int base) {
-	
-	const char digitMap[] = "0123456789abcdef";
-	std::string buf;
-	// Guard:
-	
-	if (base == 0 || base > 16) {
-		// Error: may add more trace/log output here
-		return buf;
-	
-	}
-	
-	// Take care of negative int:	
-	std::string sign;
-	
-	int _value = value;
-	
-	// Check for case when input is zero:
-	
-	if (_value == 0) return "0";
+bool Message::Deserialize(const string& input)
+    {
+        bool res = true;
+        int numarg = 0;
+        string* args = NULL;
+        if (input.size() > 0)
+	{
+		stringstream buf;
+		numarg = 0;
+		// find all delimeters
+		for (int i = 0; i < input.size(); i++)
+		{
+			if (input[i] == DELIM_SERIALIZE)
+				numarg++;
+		}
+		// find all parts
+		if (numarg > 0)
+		{
+			args = new string[numarg];
+			unsigned short cc = 0;
+			for (int i = 0; i < input.size(); i++)
+			{
+				if (input[i] == DELIM_SERIALIZE)
+				{
+					args[cc] = buf.str();
+					cc++;
+					buf.str(std::string());
+				}
+				else
+				{
+					buf << input[i];
+				}
+			}
+		}
+	}	
+        if (numarg == MESSAGE_FIELDS_COUNT && args!=NULL)
+        {
+            id = strtoul(args[0].c_str(), NULL, 10);
+            username = args[1];
+            date_time = args[2];
+            len = strtoul(args[3].c_str(), NULL, 10);
+            state = atoi(args[4].c_str());
+            body = args[5];
+        }
+        else
+            res = false;
+        return res;
+    };
 
-	if (value < 0) {
-	
-		_value = -value;
-	
-		sign = "-";
-	
-	}
-	
-	// Translating number to string with base:
-	
-	for (int i = 30; _value && i ; --i) {
-		buf = digitMap[ _value % base ] + buf;
-		_value /= base;
-	
-	}
-	return sign.append(buf);
-}
-
-bool ServerWorker::mainLoop() {
+bool ServerWorker::MainLoop() {
     STATE State = NO_OPERATION;
     string MsgStr;
     string currentUserName;
@@ -69,16 +91,15 @@ bool ServerWorker::mainLoop() {
     
     bool mesFound = false;
 
-    string buf;
     bool RegisterState = false, LoginState = false;
     
     unsigned short numarg; 
     string* args = NULL;
-    string* args2 = NULL;
+    //string* args2 = NULL;
+    char ** args2 = NULL;
     string ff;
     unsigned long size;
     int cc = 0;
-    int n = 0;
     
     unsigned int unread = 0;
     
@@ -88,89 +109,89 @@ bool ServerWorker::mainLoop() {
         bool res = ListenRecv(MsgStr);
         if (res) 
         {
-            State = parse(MsgStr, numarg, args);
+            State = Parse(MsgStr, numarg, args);
             switch (State) 
             {
-                case START:  
-                    args2 = new string[1];
-                    args2[0] = itoa(SERV_OK, 10);
-                    ff = serialize(ANSWER, 1, args2);
-                    sendTo(ff);
-                    delete[] args2;
-                    break;
-                case EXIT: 
-                    printf("Client with ID: %d is disconnect!\n", socket);
-                    args2 = new string[1];
-                    args2[0] = itoa(SERV_OK, 10);
-                    sendTo(serialize(ANSWER, 1, args2));
-                    delete[] args2;
-                    break;
-                case REG: 
-                    if (args != NULL && numarg > 1) 
-                    {
-                        errMessage = RegisterNewUser(args[0], args[1], RegisterState);
-                        if (RegisterState)
+                    case START:  
+                        args2 = (char**) malloc(1 * sizeof(char*));
+                        snprintf(args2[0], 2, "%d", SERV_OK);
+                        ff = Serialize(ANSWER, 1, args2);
+                        SendTo(ff);
+                        free(args2);
+                        break;
+                    case EXIT: 
+                        printf("Client with ID: %d is disconnect!\n", socket);
+                        args2 = (char**) malloc(1 * sizeof(char*));
+                        snprintf(args2[0], 2, "%d", SERV_OK);
+                        SendTo(Serialize(ANSWER, 1, args2));
+                        free(args2);
+                        break;
+                    case REG: 
+                        if (args != NULL && numarg > 1) 
                         {
-                            args2 = new string[1];
-                            args2[0] = itoa(SERV_OK, 10);
-                            sendTo(serialize(ANSWER, 1, args2));
-                            delete[] args2;
+                            errMessage = RegisterNewUser(args[0], args[1], RegisterState);
+                            if (RegisterState)
+                            {
+                                args2 = (char**) malloc(1 * sizeof(char*));
+                                snprintf(args2[0], 2, "%d", SERV_OK);
+                                SendTo(Serialize(ANSWER, 1, args2));
+                                free(args2);
+                            }
+                            else 
+                            {
+                                args2 = (char**) malloc(2 * sizeof(char*));
+                                snprintf(args2[0], 2, "%d", NO_OPERATION);
+                                args2[1] = errMessage;
+                                SendTo(Serialize(ANSWER, 2, args2));
+                                free(args2);
+                            }
                         }
                         else 
                         {
-                            args2 = new string[2];
-                            args2[0] = itoa(NO_OPERATION, 10);
-                            args2[1] = errMessage;
-                            sendTo(serialize(ANSWER, 2, args2));
-                            delete[] args2;
+                            args2 = (char**) malloc(2 * sizeof(char*));
+                            snprintf(args2[0], 2, "%d", NO_OPERATION);
+                            args2[1] = "Not valid args.";
+                            SendTo(Serialize(ANSWER, 2, args2));
+                            free(args2);
                         }
-                    }
-                    else 
-                    {
-                        args2 = new string[2];
-                        args2[0] = NO_OPERATION;
-                        args2[1] = "Not valid args.";
-                        sendTo(serialize(ANSWER, 2, args2));
-                        delete[] args2;
-                    }
-                    break;
-                case LOG: 
-                    if (args != NULL && numarg > 1) 
-                    {
-                        errMessage = LoginNewUser(args[0], args[1], LoginState);
-                        if (LoginState)
+                        break;
+                    case LOG: 
+                        if (args != NULL && numarg > 1) 
                         {
-                            args2 = new string[1];
-                            args2[0] = itoa(SERV_OK, 10);
-                            sendTo(serialize(ANSWER, 1, args2));
-                            currentUserName = args[0];
-                            delete[] args2;
+                            errMessage = LoginNewUser(args[0], args[1], LoginState);
+                            if (LoginState)
+                            {
+                                args2 = (char**) malloc(1 * sizeof(char*));
+                                snprintf(args2[0], 2, "%d", SERV_OK);
+                                SendTo(Serialize(ANSWER, 1, args2));
+                                currentUserName = args[0];
+                                free(args2);
+                            }
+                            else 
+                            {
+                                args2 = (char**) malloc(2 * sizeof(char*));
+                                snprintf(args2[0], 2, "%d", NO_OPERATION);
+                                args2[1] = errMessage;
+                                SendTo(Serialize(ANSWER, 2, args2));
+                                free(args2);
+                            }
                         }
                         else 
                         {
-                            args2 = new string[2];
-                            args2[0] = itoa(NO_OPERATION, 10);
-                            args2[1] = errMessage;
-                            sendTo(serialize(ANSWER, 2, args2));
-                            delete[] args2;
+                            args2 = (char**) malloc(2 * sizeof(char*));
+                            snprintf(args2[0], 2, "%d", NO_OPERATION);
+                            args2[1] = "Not valid args.";
+                            SendTo(Serialize(ANSWER, 2, args2));
+                            free(args2);
                         }
-                    }
-                    else 
-                    {
-                        args2 = new string[2];
-                        args2[0] = itoa(NO_OPERATION, 10);
-                        args2[1] = "Not valid args.";
-                        sendTo(serialize(ANSWER, 2, args2));
-                        delete[] args2;
-                    }
-                    break;
-                    case LUG:
+                        break;
+                    case LOGOUT:
                             cout << "Logging out." << endl;
                             currentUserName = "";
-                            args2 = new string[1];
-                            args2[0] = itoa(SERV_OK, 10);
-                            sendTo(serialize(ANSWER, 1, args2));
-                            delete[] args2;
+                            args2 = (char**) malloc(1 * sizeof(char*));
+                            snprintf(args2[0], 2, "%d", SERV_OK);
+                            SendTo(Serialize(ANSWER, 1, args2));
+                            free(args2);
                             break;
                     case SND:
                             cout << "Sending the message." << endl;
@@ -183,20 +204,20 @@ bool ServerWorker::mainLoop() {
                                     else { mesId = 0; }
                                     if (mesId == 0) 
                                     {
-                                        args2 = new string[2];
-                                        args2[0] = itoa(NO_OPERATION, 10);
+                                        args2 = (char**) malloc(2 * sizeof(char*));
+                                        snprintf(args2[0], 2, "%d", NO_OPERATION);
                                         args2[1] = "Error while sending the message ["+errMessage+"]";
-                                        sendTo(serialize(ANSWER, 2, args2));
-                                        delete[] args2;
+                                        SendTo(Serialize(ANSWER, 2, args2));
+                                        free(args2);
                                     }
                                     else 
                                     {
-                                        args2 = new string[2];
+                                        args2 = (char**) malloc(2 * sizeof(char*));
                                         m->body = "";
-                                        args2[0] = itoa(SERV_OK, 10);
+                                        snprintf(args2[0], 2, "%d", SERV_OK);
                                         args2[1] = m->serialize();
-                                        sendTo(serialize(ANSWER, 2, args2));
-                                        delete[] args2;
+                                        SendTo(Serialize(ANSWER, 2, args2));
+                                        free(args2);
                                     }
                                 }
                                 delete m;
@@ -207,20 +228,20 @@ bool ServerWorker::mainLoop() {
                             if (currentUserName.size() > 0) 
                             { 
                                     errMessage = DeleteUser(currentUserName);
-                                    currentUserName = "";
-                                    args2 = new string[2];
+                                    args2 = (char**) malloc(2 * sizeof(char*));
                                     if (errMessage.size() == 0)
                                     {
-                                        args2[0] = itoa(SERV_OK, 10);
-                                        args2[1] = "";
+                                        snprintf(args2[0], 2, "%d", SERV_OK);
+                                        args2[1] = currentUserName;
                                     }
                                     else
                                     {
-                                        args2[0] = itoa(NO_OPERATION, 10);
+                                        snprintf(args2[0], 2, "%d", NO_OPERATION);
                                         args2[1] = errMessage;
                                     }
-                                    sendTo(serialize(ANSWER, 2, args2));
-                                    delete[] args2;  
+                                    currentUserName = "";
+                                    SendTo(Serialize(ANSWER, 2, args2));
+                                    free(args2);  
                             }  
                             break;
                     case DEL_MES:
@@ -229,21 +250,20 @@ bool ServerWorker::mainLoop() {
                             {
                                 if (currentUserName.size() > 0) 
                                 {                                    
-                                        errMessage = DeleteMes(currentUserName, args[0]);
-                                        currentUserName = "";
-                                        args2 = new string[2];
+                                        errMessage = DeleteMes(currentUserName, args[0]);   
+                                        args2 = (char**) malloc(2 * sizeof(char*));
                                         if (errMessage.size() == 0)
                                         {
-                                            args2[0] = itoa(SERV_OK, 10);
+                                            snprintf(args2[0], 2, "%d", SERV_OK);
                                             args2[1] = "";
                                         }
                                         else
                                         {
-                                            args2[0] = itoa(NO_OPERATION, 10);
+                                            snprintf(args2[0], 2, "%d", NO_OPERATION);
                                             args2[1] = errMessage;
                                         }
-                                        sendTo(serialize(ANSWER, 2, args2));
-                                        delete[] args2;  
+                                        SendTo(Serialize(ANSWER, 2, args2));
+                                        free(args2);  
                                 } 
                             }
                             break;
@@ -269,8 +289,8 @@ bool ServerWorker::mainLoop() {
                                                     }
                                                 }
                                             }
-                                            args2 = new string[unread+1];
-                                            args2[0] = itoa(SERV_OK, 10);
+                                            args2 = (char**) malloc((unread + 1) * sizeof(char*));
+                                            snprintf(args2[0], 2, "%d", SERV_OK);
                                             cc = 1;
                                             for (unsigned int i=0; i<size; i++)
                                             {
@@ -282,7 +302,7 @@ bool ServerWorker::mainLoop() {
                                                     cc++;
                                                 }
                                             }
-                                            if (unread > 0) sendTo(serialize(ANSWER, unread+1, args2));
+                                            if (unread > 0) SendTo(Serialize(ANSWER, unread+1, args2));
                                             if (changes) WriteMessages(currentUserName, mm, size, true);
                                             for (unsigned long i=0; i<size; i++)
                                             {
@@ -291,16 +311,16 @@ bool ServerWorker::mainLoop() {
                                                     delete mm[i];
                                                 }
                                             }
-                                            delete[] args2;
+                                            free(args2);
                                         }
                                     }
                                     if (unread == 0) 
                                     {
-                                        args2 = new string[2];
-                                        args2[0] = itoa(NO_OPERATION, 10);
+                                        args2 = (char**) malloc(2 * sizeof(char*));
+                                        snprintf(args2[0], 2, "%d", NO_OPERATION);
                                         args2[1] = "Error while showing unread the messages. No messages found.";
-                                        sendTo(serialize(ANSWER, 2, args2));
-                                        delete[] args2;
+                                        SendTo(Serialize(ANSWER, 2, args2));
+                                        free(args2);
                                     }
                             }
                             break;
@@ -317,8 +337,8 @@ bool ServerWorker::mainLoop() {
                                         bool changes = false;
                                         if (size>0)
                                         {
-                                            args2 = new string[size+1];
-                                            args2[0] = itoa(SERV_OK, 10);
+                                            args2 = (char**) malloc((size + 1) * sizeof(char*));
+                                            snprintf(args2[0], 2, "%d", SERV_OK);
                                             for (unsigned long i=1; i<=size; i++)
                                             {
                                                 if (mm[i-1] != NULL)
@@ -331,7 +351,7 @@ bool ServerWorker::mainLoop() {
                                                     }
                                                 }
                                             }
-                                            sendTo(serialize(ANSWER, size+1, args2));
+                                            SendTo(Serialize(ANSWER, size+1, args2));
                                             if (changes) WriteMessages(currentUserName, mm, size, true);
                                             for (unsigned long i=0; i<size; i++)
                                             {
@@ -340,16 +360,17 @@ bool ServerWorker::mainLoop() {
                                                     delete mm[i];
                                                 }
                                             }
-                                            delete[] args2;
+                                            free(args2);
                                         }
                                     }
                                     if (size == 0) 
                                     {
-                                        args2 = new string[2];
-                                        args2[0] = itoa(NO_OPERATION, 10);
+                                        args2 = (char**) malloc(2 * sizeof(char*));
+                                        snprintf(args2[0], 2, "%d", NO_OPERATION);
+                                        
                                         args2[1] = "Error while showing all messages.";
-                                        sendTo(serialize(ANSWER, 2, args2));
-                                        delete[] args2;
+                                        SendTo(Serialize(ANSWER, 2, args2));
+                                        free(args2);
                                     }
                             }
                             break;
@@ -371,11 +392,10 @@ bool ServerWorker::mainLoop() {
                                             {
                                                 if (mm[i] != NULL)
                                                 {
-                                                    //buf.append(MessageToString(m[i][0]));
                                                     if (mm[i][0].id == mesId) 
                                                     {
-                                                        args2 = new string[2];
-                                                        args2[0] = itoa(SERV_OK, 10);
+                                                        args2 = (char**) malloc(2 * sizeof(char*));
+                                                        snprintf(args2[0], 2, "%d", SERV_OK);
                                                         args2[1] = mm[i][0].serialize();
                                                         mesFound = true;
                                                         if (mm[i][0].state == MSTATE_UNREAD) 
@@ -386,7 +406,7 @@ bool ServerWorker::mainLoop() {
                                                     }
                                                 }
                                             }
-                                            if (mesFound) sendTo(serialize(ANSWER, 2, args2));
+                                            if (mesFound) SendTo(Serialize(ANSWER, 2, args2));
                                             if (changes) WriteMessages(currentUserName, mm, size, true);
                                             for (unsigned long i=0; i<size; i++)
                                             {
@@ -395,16 +415,17 @@ bool ServerWorker::mainLoop() {
                                                     delete mm[i];
                                                 }
                                             }
-                                            delete[] args2;
+                                            free(args2);
                                         }
                                     }
                                     if (!mesFound) 
                                     {
-                                        args2 = new string[2];
-                                        args2[0] = itoa(NO_OPERATION, 10);
+                                        args2 = (char**) malloc(2 * sizeof(char*));
+                                        snprintf(args2[0], BYTE, "%d", NO_OPERATION);
+                                        
                                         args2[1] = "Error while showing the messages. No messages found.";
-                                        sendTo(serialize(ANSWER, 2, args2));
-                                        delete[] args2;
+                                        SendTo(Serialize(ANSWER, 2, args2));
+                                        free(args2);
                                     }
                             }
                             break;
@@ -419,10 +440,9 @@ bool ServerWorker::mainLoop() {
                                         mesId = atoi(args[0].c_str());
                                         Message** mm;
                                         mm = ReadAllMes(currentUserName, size);
-                                        bool changes = false;
                                         if (size>0)
                                         {
-                                            args2 = new string[2];
+                                            args2 = (char**) malloc(2 * sizeof(char*));
                                             for (unsigned long i=0; i<size; i++)
                                             {
                                                 if (mm[i] != NULL)
@@ -432,19 +452,19 @@ bool ServerWorker::mainLoop() {
                                                         mesId = AddMessage(mm[i], args[1], currentUserName, errMessage);
                                                         if (mesId == 0)
                                                         {
-                                                            args2[0] = itoa(NO_OPERATION, 10);
+                                                            snprintf(args2[0], BYTE, "%d", NO_OPERATION);
                                                             args2[1] = "Error while resending the messages. Aim user not found.";
                                                         }
                                                         else 
                                                         {
-                                                            args2[0] = itoa(SERV_OK, 10);
+                                                            snprintf(args2[0], 2, "%d", SERV_OK);
                                                             args2[1] = mm[i][0].serialize();
                                                         }
                                                         mesFound = true;
                                                     }
                                                 }
                                             }
-                                            if (mesFound) sendTo(serialize(ANSWER, 2, args2));
+                                            if (mesFound) SendTo(Serialize(ANSWER, 2, args2));
                                             for (unsigned long i=0; i<size; i++)
                                             {
                                                 if (mm[i] != NULL)
@@ -452,16 +472,17 @@ bool ServerWorker::mainLoop() {
                                                     delete mm[i];
                                                 }
                                             }
-                                            delete[] args2;
+                                            free(args2);
                                         }
                                     }
                                     if (!mesFound && size == 0) 
                                     {
-                                        args2 = new string[2];
-                                        args2[0] = itoa(NO_OPERATION, 10);
+                                        args2 = (char**) malloc(2 * sizeof(char*));
+                                        snprintf(args2[0], 2, "%d", NO_OPERATION);
                                         args2[1] = "Error while resending the messages. Message not found.";
-                                        sendTo(serialize(ANSWER, 2, args2));
-                                        delete[] args2;
+                                        SendTo(Serialize(ANSWER, 2, args2));
+                                        //delete[] args2;
+                                        free(args2);
                                     }
                             }
                             break;
@@ -474,25 +495,18 @@ bool ServerWorker::mainLoop() {
     return true;
 }
 
-void ServerWorker::openSem(const string& name)
+void ServerWorker::OpenSem(const string& name)
 {   
     sem_t *sem = sem_open (name.c_str(), O_CREAT | O_EXCL, 0644, 1);
-    //sem_wait(sem_open(name.c_str(), O_CREAT, 0644, 1));
     if (sem!=NULL)
         sem_wait (sem); 
-    //int fd_lock = open(LOCK_FILE, O_CREAT);
-    //flock(fd_lock, LOCK_EX);
-    // do stuff
-    //flock(fd_lock, LOCK_UN);
 }
 
-void ServerWorker::closeSem(const string& name)
+void ServerWorker::CloseSem(const string& name)
 {
     sem_t *sem = sem_open (name.c_str(), O_EXCL, 0644, 1);
-    //sem_wait(sem_open(name.c_str(), O_CREAT, 0644, 1));
     if (sem!=NULL)
         sem_post(sem); 
-    //sem_post(sem_open(name.c_str(), O_CREAT, 0644, 1));
 }
 
 string ServerWorker::GetPasswFilePth(const string& username) {
@@ -509,16 +523,16 @@ string ServerWorker::GetMessageFilePth(const string& username) {
     return pth;
 }
 
-bool ServerWorker::checkUser(const string& name)
+bool ServerWorker::CheckUser(const string& name)
 {
     string pth = GetPasswFilePth(name);
     string pass2;
-    openSem(name);
+    OpenSem(name);
     ifstream fin(pth.c_str());
     if (fin.good())
         fin >> pass2;
     fin.close();
-    closeSem(name);
+    CloseSem(name);
     return pass2.size()>0;
 }
 
@@ -568,7 +582,7 @@ string ServerWorker::LoginNewUser(const string &uname, const string &passw, bool
     if (uname.length() > 0 && passw.length() > 0 ) {
         string pass2;
         string pth = GetPasswFilePth(uname);
-        openSem(uname);
+        OpenSem(uname);
         ifstream fin(pth.c_str());
         if (fin.good()) {
             fin >> pass2;
@@ -584,7 +598,7 @@ string ServerWorker::LoginNewUser(const string &uname, const string &passw, bool
             mes.append("Internal server issue. Please, try again.\n");
         }
         fin.close();
-        closeSem(uname);
+        CloseSem(uname);
     }
     return mes;
 }
@@ -617,7 +631,7 @@ string ServerWorker::DeleteUser(const string& username) {
 unsigned long ServerWorker::AddMessage(Message* message, const string& username, const string& from, string& err) {
     unsigned long lastId = LastMesID(username) + 1;
     bool isNameValid = false;
-    isNameValid = checkUser(username);
+    isNameValid = CheckUser(username);
     if (isNameValid)
     {
         if (lastId > 0 && message != NULL) {
@@ -637,7 +651,7 @@ unsigned long ServerWorker::AddMessage(Message* message, const string& username,
 
 void ServerWorker::WriteToFile(const string& username, Message* message)
 {
-    openSem(username);
+    OpenSem(username);
     ofstream out(GetMessageFilePth(username).c_str(), ios_base::app);
         if (out.good() && message != NULL) {
             out << MES_ID << message->id << endl;
@@ -649,7 +663,7 @@ void ServerWorker::WriteToFile(const string& username, Message* message)
             
         }
         out.close();
-    closeSem(username);
+    CloseSem(username);
 }
 
 bool ServerWorker::WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode)//const Message** m, const unsigned long& size)
@@ -840,7 +854,6 @@ string ServerWorker::MessageToString(const Message& m)
 
 unsigned long ServerWorker::LastMesID(const string& username)
 {
-    //Don't add mutex here, blocking should be in the function, which calls this one above!!!
     unsigned long res = 0;
     unsigned long size = 0;
     Message ** buf = ReadAllMes(username, size);
@@ -870,7 +883,6 @@ Message** ServerWorker::ReadAllMes(const string& username, unsigned long& res)
             buf.clear();
             std::getline(inp, buf);
             if (buf.size()>0)
-            //printf("read: %s\n", buf);
             switch (state)
             {
                 case 0: // id
@@ -1072,13 +1084,12 @@ bool ServerWorker::ListenRecv(std::string& MsgStr)
     return true;
 }
 
-void ServerWorker::sendTo(const string& message) {
+void ServerWorker::SendTo(const char* message) {
     int res = 0;
-    int size = message.size();
+    int size = strlen(message);
     stringstream ss;
     ss << size;
     string s = ss.str();
-    //sprintf(s.c_str(), "%d", size);
     while (s.size() < 10)
     {
         s.insert(s.begin(), '0');
@@ -1091,7 +1102,7 @@ void ServerWorker::sendTo(const string& message) {
 }
 
 
-string ServerWorker::serialize(STATE opcode, unsigned short numarg, const string * ss)
+string ServerWorker::Serialize(STATE opcode, unsigned short numarg, const char** ss)
 {
 	stringstream sstr;
 	sstr << (int)opcode << DELIM_PARSE << (int)numarg << DELIM_PARSE;
@@ -1105,7 +1116,7 @@ string ServerWorker::serialize(STATE opcode, unsigned short numarg, const string
 	return sstr.str();
 }
 
-STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* &args)
+STATE ServerWorker::Parse(const string& input, unsigned short& numarg, string* &args)
 {
 	STATE res = NO_OPERATION;
 	if (input.size() > 0)
@@ -1145,26 +1156,27 @@ STATE ServerWorker::parse(const string& input, unsigned short& numarg, string* &
                                 }
 			}
 			// args[0] is operation code
-			res = parseOpCode(opcodeBuf);
+			res = ParseOpCode(opcodeBuf);
 			numarg-=2;
 		}
 	}	
 	return res;
 }
 
-STATE ServerWorker::parseOpCode(const string& buf)
+STATE ServerWorker::ParseOpCode(const string& buf)
 {
-    STATE res = NO_OPERATION;
+    int res = atoi(buf.c_str());
+    STATE st = NO_OPERATION;
         for (int i = 0; i < API_SIZE; i++)
-            if (atoi(buf.c_str()) == i)
+            if (res == i)
 		return static_cast<STATE>(i);
   
-    return res;
+    return st;
 }
 
-void ServerWorker::closeSocket()
+void ServerWorker::CloseSocket()
 {
-    sendTo("Closing connection.");
+    SendTo("Closing connection.");
     if (shutdown(socket, SHUT_RDWR) == -1)
         printf("Socket #%d shutdown failed\n", socket);
     if (close(socket) == -1)

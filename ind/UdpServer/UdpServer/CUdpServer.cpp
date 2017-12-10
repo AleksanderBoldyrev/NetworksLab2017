@@ -18,8 +18,8 @@ DWORD WINAPI CUdpServer::ListenThread(LPVOID pParam) {
 	if (l != nullptr)
 	{
 		ServerWorker w;
-		w.init(l);
-		bool res = w.mainLoop();
+		w.Init(l);
+		bool res = w.MainLoop();
 		if (res)
 			printf("Client %s terminated successfully!\n", inet_ntoa(l->address.sin_addr));
 		else
@@ -76,8 +76,8 @@ DWORD WINAPI CUdpServer::AcceptThread(LPVOID pParam)
 
 		while (1)
 		{
-			processInput(s, clients, cSize);
-			processOutput(s, clients, cSize);
+			ProcessInput(s, clients, cSize);
+			ProcessOutput(s, clients, cSize);
 
 			Sleep(LISTEN_THREAD_SLEEP);
 		}
@@ -90,7 +90,7 @@ DWORD WINAPI CUdpServer::AcceptThread(LPVOID pParam)
 
 
 //If client has current IP, then returns client ID, else it creates a new thread, puts new client into DB and returns new ID. 
-unsigned int CUdpServer::checkClient(const sockaddr_in& saddr, ThreadData* &clients, unsigned int& cSize)
+unsigned int CUdpServer::CheckClient(const sockaddr_in& saddr, ThreadData* &clients, unsigned int& cSize)
 {
 	if (cSize > 0)
 	{
@@ -163,7 +163,7 @@ unsigned int CUdpServer::checkClient(const sockaddr_in& saddr, ThreadData* &clie
 	return cSize-1;
 }
 
-void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned int& cSize)
+void CUdpServer::ProcessInput(const SOCKET& s, ThreadData* &clients, unsigned int& cSize)
 {
 	sockaddr_in from;
 	int fromlen = sizeof(from);
@@ -188,7 +188,7 @@ void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned in
 			buff2.erase(std::remove(buff2.begin(), buff2.end(), '\0'), buff2.end());
 			cout << "Recieved: " << buff2 << endl;
 
-			unsigned int pos = checkClient(from, clients, cSize);
+			unsigned int pos = CheckClient(from, clients, cSize);
 			//
 			string str = buff2;
 			size_t num = 0;
@@ -231,7 +231,7 @@ void CUdpServer::processInput(const SOCKET& s, ThreadData* &clients, unsigned in
 	}
 }
 
-void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsigned int& cSize)
+void CUdpServer::ProcessOutput(const SOCKET& s, ThreadData* clients, const unsigned int& cSize)
 {
 	if (cSize > 0 && clients != nullptr)
 	{
@@ -252,7 +252,6 @@ void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsig
 				count++;
 				if (!LockMutex(clients[i].sMutexName, m))
 				{
-					//cout << "Failed to lock mutex!" << endl;
 					UnlockMutex(m);
 				}
 				else
@@ -277,7 +276,6 @@ void CUdpServer::processOutput(const SOCKET& s, ThreadData* clients, const unsig
 								int num = ++clients[i].lastPacketNumSend;
 								sndBuf << intToStr(num);
 								int tLen = min(ss.length()-curPos, UDP_DG_LEN - TECH_DG_SIZE);
-								//cout << "\nSendind substr starting with: " << curPos << "; Count of symbols is " << tLen << "; lastPos = " << curPos+tLen << endl;
 								sndBuf << ss.substr(curPos, tLen);
 								curPos += tLen;
 								cout << "Sending to client: " << sndBuf.str().c_str() << endl;
@@ -306,7 +304,6 @@ bool CUdpServer::LockMutex(HANDLE& m)
 	result = WaitForSingleObject(m, MUTEX_TIMEOUT);
 	if (result != WAIT_OBJECT_0)
 	{
-		//cout << "Failed to lock mutex!" << endl;
 		return false;
 	}
 	return true;
@@ -324,7 +321,6 @@ bool CUdpServer::LockMutex(const wstring& name, HANDLE& m)
 	result = WaitForSingleObject(m, MUTEX_TIMEOUT);
 	if (result != WAIT_OBJECT_0)
 	{
-		//cout << "Failed to lock mutex!" << endl;
 		return false;
 	}
 	return true;
@@ -337,7 +333,7 @@ void CUdpServer::StartAccept(USHORT port)
 		DWORD t;
 		USHORT* pp = new USHORT;
 		*pp = port;
-		serverThread = CreateThread(0, 0, AcceptThread, (void *)pp, 0, &t);
+		ServerThread = CreateThread(0, 0, AcceptThread, (void *)pp, 0, &t);
 		UnlockMutex(Mut);
 	}
 }

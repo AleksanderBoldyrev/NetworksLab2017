@@ -58,19 +58,18 @@ public:
 	ClientWorker();
 	~ClientWorker();
 
-	void startThread(string* params);
+	void StartThread(string* params);
 	void stopThread();
-	static void* runner(void* args);
-	void sendTo(int s, const string& message);
+	static void* HandleThread(void* args);
+	void SendTo(int s, const string& message);
 	bool ListenRecv(int s, std::string& MsgStr);
-	string serialize(unsigned int opcode, unsigned short numarg, const string* ss);
-	STATE parse(const string& input, unsigned short& numarg, string* &args);
+	string Serialize(unsigned int opcode, unsigned short numarg, const string* ss);
+	STATE Parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);
 private:
-	void run(string host, unsigned short port);
-	int readN(int s, char* buf, int remain, int flags);
+	void Run(string host, unsigned short port);
 	void ListenLoop(string host, unsigned short port);
-	STATE parseOpCode(const string& buf);
+	STATE ParseOpCode(const string& buf);
 	pthread_t tHandle;
         
         struct sockaddr_in servOut;

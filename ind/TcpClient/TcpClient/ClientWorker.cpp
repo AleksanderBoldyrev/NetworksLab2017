@@ -6,7 +6,7 @@ ClientWorker::ClientWorker()
 ClientWorker::~ClientWorker()
 {}
 
-DWORD WINAPI ClientWorker::runner(LPVOID args)
+DWORD WINAPI ClientWorker::HandleThread(LPVOID args)
 {
 	string* c = (string*)args;
 	if (c != nullptr)
@@ -36,7 +36,7 @@ DWORD WINAPI ClientWorker::runner(LPVOID args)
 				if (port > 0)
 				{
 					static ClientWorker instance;
-					instance.run(host, port);
+					instance.Run(host, port);
 				}
 				else
 					printf("Port is not valid.");
@@ -50,32 +50,16 @@ DWORD WINAPI ClientWorker::runner(LPVOID args)
 	return 0;
 }
 
-void ClientWorker::startThread(string* params)
+void ClientWorker::StartThread(string* params)
 {
 	DWORD t;
-	tHandle = CreateThread(0, 0, runner, params, 0, &t);
+	tHandle = CreateThread(0, 0, HandleThread, params, 0, &t);
 	WaitForSingleObject(tHandle, INFINITE);
 }
 
-void ClientWorker::stopThread()
+void ClientWorker::StopThread()
 {
 	CloseHandle(tHandle);
-}
-
-int ClientWorker::readN(SOCKET s, char* buf, int remain, int flags) {
-	int rcb = 0;
-	int rc;
-	while (remain)
-	{
-		rc = recv(s, buf + rcb, remain, flags);
-		if (rc < 1) {
-			return rc;
-		}
-		rcb += rc;
-		remain -= rc;
-	}
-
-	return rcb;
 }
 
 void ClientWorker::ListenLoop(const int& socket)
@@ -113,9 +97,9 @@ void ClientWorker::ListenLoop(const int& socket)
 		switch (state)
 		{
 		case STATE::START:
-			sendTo(socket, serialize(STATE::START, 0, nullptr));
+			SendTo(socket, Serialize(STATE::START, 0, nullptr));
 			ListenRecv(socket, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != STATE::NO_OPERATION)
 			{
 				if (numArgCount > 0 && args != nullptr)
@@ -144,9 +128,9 @@ void ClientWorker::ListenLoop(const int& socket)
 			}
 			break;
 		case STATE::NO_OPERATION:
-			sendTo(socket, serialize(STATE::NO_OPERATION, 0, nullptr));
+			SendTo(socket, Serialize(STATE::NO_OPERATION, 0, nullptr));
 			ListenRecv(socket, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			cout << "Enter a valid operation number.\n";
 			break;
 		case STATE::ANSWER:
@@ -182,9 +166,9 @@ void ClientWorker::ListenLoop(const int& socket)
 
 			break;
 		case STATE::EXIT:
-			sendTo(socket, serialize(STATE::EXIT, 0, nullptr));
+			SendTo(socket, Serialize(STATE::EXIT, 0, nullptr));
 			ListenRecv(socket, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			return;
 			break;
 		case STATE::REG:
@@ -200,10 +184,10 @@ void ClientWorker::ListenLoop(const int& socket)
 					string * bufs = new string[2];
 					bufs[0] = log;
 					bufs[1] = pass;
-					sendTo(socket, serialize(STATE::REG, 2, bufs));
+					SendTo(socket, Serialize(STATE::REG, 2, bufs));
 					delete[] bufs;
 					ListenRecv(socket, buf);
-					answerCode = parse(buf, numArgCount, args);
+					answerCode = Parse(buf, numArgCount, args);
 					if (answerCode != STATE::NO_OPERATION)
 					{
 						if (numArgCount > 0 && args != nullptr)
@@ -253,10 +237,10 @@ void ClientWorker::ListenLoop(const int& socket)
 					string * bufs = new string[2];
 					bufs[0] = log;
 					bufs[1] = pass;
-					sendTo(socket, serialize(STATE::LOG, 2, bufs));
+					SendTo(socket, Serialize(STATE::LOG, 2, bufs));
 					delete[] bufs;
 					ListenRecv(socket, buf);
-					answerCode = parse(buf, numArgCount, args);
+					answerCode = Parse(buf, numArgCount, args);
 					if (answerCode != STATE::NO_OPERATION)
 					{
 						if (numArgCount > 0 && args != nullptr)
@@ -313,7 +297,7 @@ void ClientWorker::ListenLoop(const int& socket)
 					state = STATE::REG;
 					break;
 				case 4:
-					state = STATE::LUG;
+					state = STATE::LOGOUT;
 					break;
 				case 5:
 					state = STATE::DEL_US;
@@ -340,11 +324,11 @@ void ClientWorker::ListenLoop(const int& socket)
 				}
 			}
 			break;
-		case STATE::LUG:
+		case STATE::LOGOUT:
 			cout << "Logging out.\n" << endl;
-			sendTo(socket, serialize(STATE::LUG, 0, nullptr));
+			SendTo(socket, Serialize(STATE::LOGOUT, 0, nullptr));
 			ListenRecv(socket, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			if (atoi(args[0].c_str()) == STATE::SERV_OK)
 			{
 				cout << "Log out successfully. Press any key." << endl;
@@ -365,10 +349,10 @@ void ClientWorker::ListenLoop(const int& socket)
 				string * bufs = new string[2];
 				bufs[0] = uname;
 				bufs[1] = m.serialize();
-				sendTo(socket, serialize(STATE::SND, 2, bufs));
+				SendTo(socket, Serialize(STATE::SND, 2, bufs));
 				delete[] bufs;
 				ListenRecv(socket, buf);
-				answerCode = parse(buf, numArgCount, args);
+				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != STATE::NO_OPERATION)
 				{
 					if (numArgCount > 0 && args != nullptr)
@@ -408,16 +392,16 @@ void ClientWorker::ListenLoop(const int& socket)
 			break;
 		case STATE::DEL_US:
 			cout << "Deleting user." << endl;
-			sendTo(socket, serialize(STATE::DEL_US, 0, nullptr));
+			SendTo(socket, Serialize(STATE::DEL_US, 0, nullptr));
 			ListenRecv(socket, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != STATE::NO_OPERATION)
 			{
 				if (numArgCount > 0 && args != nullptr)
 				{
 					if (atoi(args[0].c_str()) == STATE::SERV_OK)
 					{
-						cout << "User <" << uname << "> deleted successfully." << endl;
+						cout << "User <" << args[1] << "> deleted successfully." << endl;
 						cout << "\nPress any key." << endl;
 						state = STATE::INIT;
 						_getch();
@@ -452,9 +436,9 @@ void ClientWorker::ListenLoop(const int& socket)
 				string bufs[1];
 				sss << mesId;
 				bufs[0] = sss.str();
-				sendTo(socket, serialize(STATE::DEL_MES, 1, bufs));
+				SendTo(socket, Serialize(STATE::DEL_MES, 1, bufs));
 				ListenRecv(socket, buf);
-				answerCode = parse(buf, numArgCount, args);
+				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != STATE::NO_OPERATION)
 				{
 					if (numArgCount > 0 && args != nullptr)
@@ -463,7 +447,7 @@ void ClientWorker::ListenLoop(const int& socket)
 						{
 							cout << "Message <" << mesId << "> deleted successfully." << endl;
 							cout << "\nPress any key." << endl;
-							state = STATE::INIT;
+							state = STATE::INSYS;
 							_getch();
 						}
 						else
@@ -489,9 +473,9 @@ void ClientWorker::ListenLoop(const int& socket)
 			break;
 		case STATE::SH_UNR:
 			cout << "Showing unread messages." << endl;
-			sendTo(socket, serialize(STATE::SH_UNR, 0, nullptr));
+			SendTo(socket, Serialize(STATE::SH_UNR, 0, nullptr));
 			ListenRecv(socket, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != STATE::NO_OPERATION)
 			{
 				if (numArgCount > 0 && args != nullptr)
@@ -533,9 +517,9 @@ void ClientWorker::ListenLoop(const int& socket)
 			break;
 		case STATE::SH_ALL:
 			cout << "Showing all messages." << endl;
-			sendTo(socket, serialize(STATE::SH_ALL, 0, nullptr));
+			SendTo(socket, Serialize(STATE::SH_ALL, 0, nullptr));
 			ListenRecv(socket, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != STATE::NO_OPERATION)
 			{
 				if (numArgCount > 0 && args != nullptr)
@@ -585,9 +569,9 @@ void ClientWorker::ListenLoop(const int& socket)
 				string bufs[1];
 				sss << mesId;
 				bufs[0] = sss.str();
-				sendTo(socket, serialize(STATE::SH_EX, 1, bufs));
+				SendTo(socket, Serialize(STATE::SH_EX, 1, bufs));
 				ListenRecv(socket, buf);
-				answerCode = parse(buf, numArgCount, args);
+				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != STATE::NO_OPERATION)
 				{
 					if (numArgCount > 0 && args != nullptr)
@@ -638,10 +622,9 @@ void ClientWorker::ListenLoop(const int& socket)
 				sss << mesId;
 				bufs[0] = sss.str();
 				bufs[1] = uname;
-				sendTo(socket, serialize(STATE::RSND, 2, bufs));
-				//delete[] bufs;
+				SendTo(socket, Serialize(STATE::RSND, 2, bufs));
 				ListenRecv(socket, buf);
-				answerCode = parse(buf, numArgCount, args);
+				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != STATE::NO_OPERATION)
 				{
 					if (numArgCount > 1 && args != nullptr)
@@ -683,33 +666,21 @@ void ClientWorker::ListenLoop(const int& socket)
 string ClientWorker::MessageToString(const Message& m)
 {
 	stringstream res;
-	res << "ID: ";
-	res << m.id;
-	res << "\n";
+	res << "ID: " << m.id << "\n";
 
-	res << "TIME: ";
-	res << m.date_time;
-	res << "\n";
+	res << "TIME: " << m.date_time << "\n";
 
-	res << "FROM: ";
-	res << m.username;
-	res << "\n";
+	res << "FROM: " << m.username << "\n";
 
-	res << "LEN: ";
-	res << m.len;
-	res << "\n";
+	res << "LEN: " << m.len << "\n";
 
-	res << "STATE: ";
-	res << MESSAGE_STATES[m.state];
-	res << "\n";
+	res << "STATE: " << MESSAGE_STATES[m.state] << "\n";
 
-	res << "BODY: ";
-	res << m.body;
-	res << "\n";
+	res << "BODY: " << m.body << "\n";
 	return res.str();
 }
 
-string ClientWorker::serialize(STATE opcode, unsigned short numarg, const string * ss)
+string ClientWorker::Serialize(STATE opcode, unsigned short numarg, const string * ss)
 {
 	stringstream sstr;
 	sstr << (int)opcode << DELIM_PARSE << (int)numarg << DELIM_PARSE;
@@ -723,7 +694,7 @@ string ClientWorker::serialize(STATE opcode, unsigned short numarg, const string
 	return sstr.str();
 }
 
-STATE ClientWorker::parse(const string& input, unsigned short& numarg, string* &args)
+STATE ClientWorker::Parse(const string& input, unsigned short& numarg, string* &args)
 {
 	STATE res = STATE::NO_OPERATION;
 	if (input.size() > 0)
@@ -755,9 +726,7 @@ STATE ClientWorker::parse(const string& input, unsigned short& numarg, string* &
 						args[cc - 2] = buf.str();
 					}
 					cc++;
-					//buf.clear();
 					buf.str(std::string());
-					//buf.str("");
 				}
 				else
 				{
@@ -765,23 +734,24 @@ STATE ClientWorker::parse(const string& input, unsigned short& numarg, string* &
 				}
 			}
 			// args[0] is operation code
-			res = parseOpCode(opcodeBuf);
+			res = ParseOpCode(opcodeBuf);
 			numarg -= 2;
 		}
 	}
 	return res;
 }
 
-STATE ClientWorker::parseOpCode(const string& buf)
+STATE ClientWorker::ParseOpCode(const string& buf)
 {
+	int res = atoi(buf.c_str());
 	if (API_SIZE > 0)
 		for (int i = 0; i < API_SIZE; i++)
-			if (atoi(buf.c_str()) == i)
+			if (res == i)
 				return static_cast<STATE>(i);
 	return STATE::NO_OPERATION;
 }
 
-void ClientWorker::run(string host, unsigned short port)
+void ClientWorker::Run(string host, unsigned short port)
 {
 	printf("Starting new client thread with HOST=%s, PORT=%u\n", host.c_str(), port);
 	//isRun = true;
@@ -835,7 +805,7 @@ void ClientWorker::run(string host, unsigned short port)
 	}
 }
 
-void ClientWorker::sendTo(SOCKET socket, const string& message)
+void ClientWorker::SendTo(SOCKET socket, const string& message)
 {
 	cout << "Send to server: " << message << endl;
 	int res = 0;
@@ -843,34 +813,27 @@ void ClientWorker::sendTo(SOCKET socket, const string& message)
 	stringstream ss;
 	ss << size;
 	string s = ss.str();
-	//sprintf(s.c_str(), "%d", size);
 	while (s.size() < 10)
 	{
 		s.insert(s.begin(), '0');
 	}
 	s += message;
 	res = send(socket, s.c_str(), s.size(), 0);
-	//printf("String to send: %s", s.c_str());
 	if (res != s.size())
 		printf("Send failed: %d != %d!\n", res, s.size());
 }
 
 bool ClientWorker::ListenRecv(SOCKET socket, std::string& MsgStr)
 {
-	char* c = new char[10];
+	char* c = new char[BUFSIZE];
 	unsigned int size = 0;
-	int ssize = recv(socket, c, 10, 0);
-	//printf("Size buffer: %s\n", c);
+	int ssize = recv(socket, c, BUFSIZE, 0);
 	if (ssize == 10)
 	{
 		size = atoi(c);
-		//char* recvbuf = (char*)malloc((size)*sizeof(char));
 		char* recvbuf = new char[size];
 
 		int res = recv(socket, recvbuf, size, 0);
-		//printf("String received: %s\n", recvbuf);
-
-		//printf("Received %d symbols!\n", res);
 		if (res > 0)
 		{
 			MsgStr.clear();

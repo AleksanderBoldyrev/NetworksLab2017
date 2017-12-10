@@ -10,13 +10,7 @@ int main(int argc, void** argv)
 	scanf("%s", s);
 	string* ff = new string(s);
 
-	f.startThread(ff);
-	//Sleep(5000); // wait 5 seconds until client is connecting to server
-	/*while (!t.try_lock())
-	{
-		Sleep(1000);
-	}
-	t.unlock();*/
+	f.StartThread(ff);
 	printf("Mail client terminated!\n");
 	system("pause");
 	delete ff;

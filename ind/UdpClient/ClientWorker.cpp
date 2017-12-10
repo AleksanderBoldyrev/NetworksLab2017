@@ -8,7 +8,7 @@ ClientWorker::ClientWorker()
 ClientWorker::~ClientWorker()
 {}
 
-void* ClientWorker::runner(void* args)
+void* ClientWorker::HandleThread(void* args)
 {
 	string* c = (string*)args;
 	if (c != NULL)
@@ -38,7 +38,6 @@ void* ClientWorker::runner(void* args)
 				if (port > 0)
 				{
 					static ClientWorker instance;
-					//instance.run(host, port);
                                         instance.ListenLoop(host, port);
 				}
 				else
@@ -53,31 +52,15 @@ void* ClientWorker::runner(void* args)
 	return 0;
 }
 
-void ClientWorker::startThread(string* params)
+void ClientWorker::StartThread(string* params)
 {
-        pthread_create(&tHandle, 0, runner, (void *) params);
+        pthread_create(&tHandle, 0, HandleThread, (void *) params);
         pthread_join(tHandle, NULL);
 }
 
 void ClientWorker::stopThread()
 {
 	pthread_cancel(tHandle);
-}
-
-int ClientWorker::readN(int s, char* buf, int remain, int flags) {
-	int rcb = 0;
-	int rc;
-	while (remain)
-	{
-		rc = recv(s, buf + rcb, remain, flags);
-		if (rc < 1) {
-			return rc;
-		}
-		rcb += rc;
-		remain -= rc;
-	}
-
-	return rcb;
 }
 
 void ClientWorker::ListenLoop(string host, unsigned short port)
@@ -93,10 +76,8 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
     
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
         
-	string buffer;
 	short state = 0;
 	int error = 0;
-	int c = 0;
 	state = START;
 	string buf;
 	unsigned int answerCode;
@@ -116,7 +97,6 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 
 	while (1)
 	{
-		//error = WSAGetLastError();
 		if (error != 0)
 		{
 			printf("Socket error: %d", error);
@@ -125,9 +105,9 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 		switch (state)
 		{
 		case START:
-			sendTo(sockfd, serialize(START, 0, NULL));
+			SendTo(sockfd, Serialize(START, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != NO_OPERATION)
 			{
 				if (numArgCount > 0 && args != NULL)
@@ -157,9 +137,9 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			}
 			break;
 		case NO_OPERATION:
-			sendTo(sockfd, serialize(NO_OPERATION, 0, NULL));
+			SendTo(sockfd, Serialize(NO_OPERATION, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			cout << "Enter a valid operation number.\n";
 			break;
 		case ANSWER:
@@ -170,7 +150,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			while (!df)
 			{
 				cout << "* MAIL *\n" << "Select the following items:\n" << "2 - Exit\n" << "3 - Register\n" << "4 - Login\n" << OPENT << endl;
-				short op; //= getchar() - (int)'0';
+				short op;
 				cin >> op;
 				df = true;
 				switch (op)
@@ -188,20 +168,13 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					df = false;
 					printf("Not valid operation number.");
 					getchar();
-
-					//sendTo(socket, serialize(INIT, 0, NULL));
-					//ListenRecv(socket, buf);
-					//answerCode = parse(buf, numArgCount, args);
 				}
 			}
 			break;
-		case OPCODE:
-
-			break;
 		case EXIT:
-			sendTo(sockfd, serialize(EXIT, 0, NULL));
+			SendTo(sockfd, Serialize(EXIT, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			return;
 			break;
 		case REG:
@@ -217,10 +190,10 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					string * bufs = new string[2];
 					bufs[0] = log;
 					bufs[1] = pass;
-					sendTo(sockfd, serialize(REG, 2, bufs));
+					SendTo(sockfd, Serialize(REG, 2, bufs));
 					delete[] bufs;
 					ListenRecv(sockfd, buf);
-					answerCode = parse(buf, numArgCount, args);
+					answerCode = Parse(buf, numArgCount, args);
 					if (answerCode != NO_OPERATION)
 					{
 						if (numArgCount > 0 && args != NULL)
@@ -270,10 +243,10 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					string * bufs = new string[2];
 					bufs[0] = log;
 					bufs[1] = pass;
-					sendTo(sockfd, serialize(LOG, 2, bufs));
+					SendTo(sockfd, Serialize(LOG, 2, bufs));
 					delete[] bufs;
 					ListenRecv(sockfd, buf);
-					answerCode = parse(buf, numArgCount, args);
+					answerCode = Parse(buf, numArgCount, args);
 					if (answerCode != NO_OPERATION)
 					{
 						if (numArgCount > 0 && args != NULL)
@@ -330,7 +303,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					state = REG;
 					break;
 				case 4:
-					state = LUG;
+					state = LOGOUT;
 					break;
 				case 5:
 					state = DEL_US;
@@ -357,11 +330,11 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				}
 			}
 			break;
-		case LUG:
+		case LOGOUT:
 			cout << "Logging out.\n" << endl;
-			sendTo(sockfd, serialize(LUG, 0, NULL));
+			SendTo(sockfd, Serialize(LOGOUT, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			if (atoi(args[0].c_str()) == SERV_OK)
 			{
 				cout << "Log out successfully. Press any key." << endl;
@@ -382,10 +355,10 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				string * bufs = new string[2];
 				bufs[0] = uname;
 				bufs[1] = m.serialize();
-				sendTo(sockfd, serialize(SND, 2, bufs));
+				SendTo(sockfd, Serialize(SND, 2, bufs));
 				delete[] bufs;
 				ListenRecv(sockfd, buf);
-				answerCode = parse(buf, numArgCount, args);
+				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != NO_OPERATION)
 				{
 					if (numArgCount > 0 && args != NULL)
@@ -425,9 +398,9 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			break;
 		case DEL_US:
 			cout << "Deleting user." << endl;
-			sendTo(sockfd, serialize(DEL_US, 0, NULL));
+			SendTo(sockfd, Serialize(DEL_US, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != NO_OPERATION)
 			{
 				if (numArgCount > 0 && args != NULL)
@@ -469,9 +442,9 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				string bufs[1];
 				sss << mesId;
 				bufs[0] = sss.str();
-				sendTo(sockfd, serialize(DEL_MES, 1, bufs));
+				SendTo(sockfd, Serialize(DEL_MES, 1, bufs));
 				ListenRecv(sockfd, buf);
-				answerCode = parse(buf, numArgCount, args);
+				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != NO_OPERATION)
 				{
 					if (numArgCount > 0 && args != NULL)
@@ -506,9 +479,9 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			break;
 		case SH_UNR:
 			cout << "Showing unread messages." << endl;
-			sendTo(sockfd, serialize(SH_UNR, 0, NULL));
+			SendTo(sockfd, Serialize(SH_UNR, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != NO_OPERATION)
 			{
 				if (numArgCount > 0 && args != NULL)
@@ -550,9 +523,9 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			break;
 		case SH_ALL:
 			cout << "Showing all messages." << endl;
-			sendTo(sockfd, serialize(SH_ALL, 0, NULL));
+			SendTo(sockfd, Serialize(SH_ALL, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = parse(buf, numArgCount, args);
+			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != NO_OPERATION)
 			{
 				if (numArgCount > 0 && args != NULL)
@@ -602,9 +575,9 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				string bufs[1];
 				sss << mesId;
 				bufs[0] = sss.str();
-				sendTo(sockfd, serialize(SH_EX, 1, bufs));
+				SendTo(sockfd, Serialize(SH_EX, 1, bufs));
 				ListenRecv(sockfd, buf);
-				answerCode = parse(buf, numArgCount, args);
+				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != NO_OPERATION)
 				{
 					if (numArgCount > 0 && args != NULL)
@@ -655,10 +628,9 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				sss << mesId;
 				bufs[0] = sss.str();
 				bufs[1] = uname;
-				sendTo(sockfd, serialize(RSND, 2, bufs));
-				//delete[] bufs;
+				SendTo(sockfd, Serialize(RSND, 2, bufs));
 				ListenRecv(sockfd, buf);
-				answerCode = parse(buf, numArgCount, args);
+				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != NO_OPERATION)
 				{
 					if (numArgCount > 1 && args != NULL)
@@ -726,7 +698,7 @@ string ClientWorker::MessageToString(const Message& m)
 	return res.str();
 }
 
-string ClientWorker::serialize(unsigned int opcode, unsigned short numarg, const string * ss)
+string ClientWorker::Serialize(unsigned int opcode, unsigned short numarg, const string * ss)
 {
 	stringstream sstr;
 	sstr << (int)opcode << DELIM_PARSE << (int)numarg << DELIM_PARSE;
@@ -740,7 +712,7 @@ string ClientWorker::serialize(unsigned int opcode, unsigned short numarg, const
 	return sstr.str();
 }
 
-STATE ClientWorker::parse(const string& input, unsigned short& numarg, string* &args)
+STATE ClientWorker::Parse(const string& input, unsigned short& numarg, string* &args)
 {
 	STATE res = NO_OPERATION;
 	if (input.size() > 0)
@@ -780,25 +752,25 @@ STATE ClientWorker::parse(const string& input, unsigned short& numarg, string* &
 				}
 			}
 			// args[0] is operation code
-			res = parseOpCode(opcodeBuf);
+			res = ParseOpCode(opcodeBuf);
 			numarg -= 2;
 		}
 	}
 	return res;
 }
 
-STATE ClientWorker::parseOpCode(const string& buf)
+STATE ClientWorker::ParseOpCode(const string& buf)
 {
+        int res = atoi(buf.c_str());
 	if (API_SIZE > 0)
 		for (int i = 0; i < API_SIZE; i++)
-			if (atoi(buf.c_str()) == i)
+			if (res == i)
 				return static_cast<STATE>(i);
 	return NO_OPERATION;
 }
 
-void ClientWorker::sendTo(int socket, const string& temp) 
+void ClientWorker::SendTo(int socket, const string& temp) 
 {
-    //cout << "Send to server: " << message << endl;
     if (temp.size() > 0) 
     {
         string message = temp + EOF_SYM;
@@ -810,7 +782,6 @@ void ClientWorker::sendTo(int socket, const string& temp)
             int num = ++lastPacketNumSend;
             sndBuf = intToStr(num);
             int tLen = min((int)(message.length()-curPos), UDP_DG_LEN - TECH_DG_SIZE);
-            //cout << "\nSendind substr starting with: " << curPos << "; Count of symbols is " << tLen << "; lastPos = " << curPos+tLen << endl;
             sndBuf += message.substr(curPos, tLen);
             curPos += tLen;
             cout << "Sending: " << sndBuf << endl;
@@ -836,8 +807,6 @@ bool ClientWorker::ListenRecv(int socket, std::string& MsgStr) {
             if (buffer[i]==EOF_SYM)
                 break;
         }
-        //s = string(buffer);
-        //for ()
         memset(buffer, 0, sizeof(buffer));
         s.erase(std::remove(s.begin(), s.end(), '\r'), s.end());
         s.erase(std::remove(s.begin(), s.end(), '\0'), s.end());
@@ -865,6 +834,5 @@ bool ClientWorker::ListenRecv(int socket, std::string& MsgStr) {
         else
             cout << "Packet order mismatch!\n";
     }
-    //cout << "Recieved: " << MsgStr << endl;
     return true;
 }

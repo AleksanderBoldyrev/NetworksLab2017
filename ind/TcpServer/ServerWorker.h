@@ -33,10 +33,10 @@ public:
     ServerWorker();
     ~ServerWorker();
     
-    void init(SOCKET ClientSocket);
-    bool mainLoop();
+    void Init(SOCKET ClientSocket);
+    bool MainLoop();
 private:
-    void sendTo(const string& message);
+    void SendTo(const char* message);
     SOCKET socket;
     string GetPasswFilePth(const string& username);
     string GetMessageFilePth(const string& username);
@@ -53,20 +53,20 @@ private:
     Message** ReadAllMes(const string& username, unsigned long& size);
     Message* ReadOneMes(const string& username, const unsigned long& id, bool& res);
     bool DeleteOneMes(const string& username, const unsigned long& id);
-    bool WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode);//const Message** m, const unsigned long& size);
-    bool checkUser(const string& name);
+    bool WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode);
+    bool CheckUser(const string& name);
     unsigned long LastMesID(const string& username);
-    STATE parseOpCode(const string& buf);
-    string serialize(STATE opcode, unsigned short numarg, const string * ss);
-    STATE parse(const string& input, unsigned short& numarg, string* &args);
+    STATE ParseOpCode(const string& buf);
+    string Serialize(STATE opcode, unsigned short numarg, const char** ss);
+    STATE Parse(const string& input, unsigned short& numarg, string* &args);
     
     void WriteToFile(const string& username, Message* message);    
     
-    void openSem(const string& name);
-    void closeSem(const string& name);
+    void OpenSem(const string& name);
+    void CloseSem(const string& name);
     
     bool ListenRecv(std::string& MsgStr);
-    void closeSocket();
+    void CloseSocket();
     
     
 };

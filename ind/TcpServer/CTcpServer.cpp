@@ -99,8 +99,8 @@ void* ListenThread(void* pParam) {
     delete pOldData;
 
     ServerWorker w;
-    w.init(pData.ClientSocket);
-    bool res = w.mainLoop();
+    w.Init(pData.ClientSocket);
+    bool res = w.MainLoop();
     if (res)
         printf("Client #%d terminated successfully!\n", pData.CliID);
     else

@@ -6,8 +6,9 @@
 
 using namespace std;
 
-#define DELIM_PARSE '|'
-#define DELIM_SERIALIZE '^'
+const char DELIM_PARSE = '|';
+const char DELIM_SERIALIZE = '^';
+const short BYTE = 2;
 
 static const int API_SIZE = 18;
 
@@ -45,7 +46,7 @@ enum STATE
 	EXIT,
 	REG,
 	LOG,
-	LUG,
+	LOGOUT,
         SND,
 	DEL_US,
 	DEL_MES,
@@ -73,73 +74,13 @@ const int MESSAGE_STATES[] = {0, 1, 2 };
 class Message
 {
 public:
-    unsigned long id = 0;
+    static unsigned long id = 0;
     string username;
     string date_time;
-    unsigned long len = 0;
-    int state = 0;
+    static unsigned long len = 0;
+    static int state = 0;
     string body;
-    string serialize()
-    {
-        stringstream ss;
-        ss << id << DELIM_SERIALIZE;
-        ss << username << DELIM_SERIALIZE;
-        ss << date_time << DELIM_SERIALIZE;
-        ss << len << DELIM_SERIALIZE;
-        ss << state << DELIM_SERIALIZE;
-        std::replace(body.begin(), body.end(), DELIM_SERIALIZE, ' ');
-        ss << body << DELIM_SERIALIZE;
-        return ss.str();
-    };
-   
-bool deserialize(const string& input)
-    {
-        bool res = true;
-        int numarg = 0;
-        string* args = NULL;
-        if (input.size() > 0)
-	{
-		stringstream buf;
-		numarg = 0;
-		// find all delimeters
-		for (int i = 0; i < input.size(); i++)
-		{
-			if (input[i] == DELIM_SERIALIZE)
-				numarg++;
-		}
-		// find all parts
-		if (numarg > 0)
-		{
-			args = new string[numarg];
-			unsigned short cc = 0;
-			for (int i = 0; i < input.size(); i++)
-			{
-				if (input[i] == DELIM_SERIALIZE)
-				{
-					args[cc] = buf.str();
-					cc++;
-					buf.str(std::string());
-				}
-				else
-				{
-					buf << input[i];
-				}
-			}
-		}
-	}	
-        if (numarg == MESSAGE_FIELDS_COUNT && args!=NULL)
-        {
-            id = strtoul(args[0].c_str(), NULL, 10);
-            username = args[1];
-            date_time = args[2];
-            len = strtoul(args[3].c_str(), NULL, 10);
-            state = atoi(args[4].c_str());
-            body = args[5];
-        }
-        else
-            res = false;
-        return res;
-    };
+    string Serialize();
+    bool Deserialize(const string& input);
 };
-
 #endif

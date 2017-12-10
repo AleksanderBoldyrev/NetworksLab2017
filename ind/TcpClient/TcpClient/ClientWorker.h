@@ -13,7 +13,8 @@
 
 #include "API.h"
 
-#define DELIM ':'
+const char DELIM = ':';
+const short BUFSIZE = 10;
 
 using namespace std;
 
@@ -23,20 +24,17 @@ public:
 	ClientWorker();
 	~ClientWorker();
 
-	void startThread(string* params);
-	void stopThread();
-	static DWORD WINAPI runner(LPVOID args);
-	void sendTo(SOCKET s, const string& message);
+	void StartThread(string* params);
+	void StopThread();
+	static DWORD WINAPI HandleThread(LPVOID args);
+	void SendTo(SOCKET s, const string& message);
 	bool ListenRecv(SOCKET s, std::string& MsgStr);
-	string serialize(STATE opcode, unsigned short numarg, const string* ss);
-	//STATE ClientWorker::parse(const string& input, unsigned short& numarg, string* args);
-	STATE parse(const string& input, unsigned short& numarg, string* &args);
+	string Serialize(STATE opcode, unsigned short numarg, const string* ss);
+	STATE Parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);
 private:
-	void run(string host, unsigned short port);
-	int readN(SOCKET s, char* buf, int remain, int flags);
+	void Run(string host, unsigned short port);
 	void ListenLoop(const int& socket);
-	//STATE ClientWorker::parseOpCode(const string& buf);
-	STATE parseOpCode(const string& buf);
+	STATE ParseOpCode(const string& buf);
 	HANDLE tHandle;
 };
