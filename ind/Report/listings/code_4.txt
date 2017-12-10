@@ -1,0 +1,73 @@
+==4998== HEAP SUMMARY:
+==4998==     in use at exit: 106,469 bytes in 16 blocks
+==4998==   total heap usage: 95 allocs, 79 frees, 158,916 bytes allocated
+==4998== 
+==4998== Thread 1:
+==4998== 8 bytes in 1 blocks are definitely lost in loss record 1 of 13
+==4998==    at 0x4C2DB8F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4998==    by 0x4C2FDEF: realloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4998==    by 0x408281: ServerWorker::ReadAllMes(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, unsigned long&) (ServerWorker.cpp:789)
+==4998==    by 0x40800A: ServerWorker::LastMesID(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (ServerWorker.cpp:758)
+==4998==    by 0x4067F9: ServerWorker::AddMessage(Message*, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&) (ServerWorker.cpp:512)
+==4998==    by 0x404793: ServerWorker::MainLoop() (ServerWorker.cpp:203)
+==4998==    by 0x40311A: ListenThread(void*) (CTcpServer.cpp:103)
+==4998==    by 0x4E416B9: start_thread (pthread_create.c:333)
+==4998==    by 0x56F63DC: clone (clone.S:109)
+==4998== 
+==4998== 16 bytes in 2 blocks are definitely lost in loss record 2 of 13
+==4998==    at 0x4C2E80F: operator new[](unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4998==    by 0x4095FA: ServerWorker::ListenRecv(char*&) (ServerWorker.cpp:980)
+==4998==    by 0x40417B: ServerWorker::MainLoop() (ServerWorker.cpp:130)
+==4998==    by 0x40311A: ListenThread(void*) (CTcpServer.cpp:103)
+==4998==    by 0x4E416B9: start_thread (pthread_create.c:333)
+==4998==    by 0x56F63DC: clone (clone.S:109)
+==4998== 
+==4998== 30 bytes in 3 blocks are definitely lost in loss record 4 of 13
+==4998==    at 0x4C2E80F: operator new[](unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4998==    by 0x4096EE: ServerWorker::SendTo(char const*) (ServerWorker.cpp:998)
+==4998==    by 0x405468: ServerWorker::MainLoop() (ServerWorker.cpp:366)
+==4998==    by 0x40311A: ListenThread(void*) (CTcpServer.cpp:103)
+==4998==    by 0x4E416B9: start_thread (pthread_create.c:333)
+==4998==    by 0x56F63DC: clone (clone.S:109)
+==4998== 
+==4998== 200 bytes in 1 blocks are definitely lost in loss record 9 of 13
+==4998==    at 0x4C2E80F: operator new[](unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4998==    by 0x403D2F: Message::Deserialize(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) (ServerWorker.cpp:81)
+==4998==    by 0x404720: ServerWorker::MainLoop() (ServerWorker.cpp:200)
+==4998==    by 0x40311A: ListenThread(void*) (CTcpServer.cpp:103)
+==4998==    by 0x4E416B9: start_thread (pthread_create.c:333)
+==4998==    by 0x56F63DC: clone (clone.S:109)
+==4998== 
+==4998== 288 bytes in 1 blocks are possibly lost in loss record 10 of 13
+==4998==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4998==    by 0x40138A4: allocate_dtv (dl-tls.c:322)
+==4998==    by 0x40138A4: _dl_allocate_tls (dl-tls.c:539)
+==4998==    by 0x4E4226E: allocate_stack (allocatestack.c:588)
+==4998==    by 0x4E4226E: pthread_create@@GLIBC_2.2.5 (pthread_create.c:539)
+==4998==    by 0x402DE6: CTcpServer::StartAccept(unsigned short) (CTcpServer.cpp:29)
+==4998==    by 0x40ABB0: main (main.cpp:11)
+==4998== 
+==4998== 288 bytes in 1 blocks are possibly lost in loss record 11 of 13
+==4998==    at 0x4C2FB55: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==4998==    by 0x40138A4: allocate_dtv (dl-tls.c:322)
+==4998==    by 0x40138A4: _dl_allocate_tls (dl-tls.c:539)
+==4998==    by 0x4E4226E: allocate_stack (allocatestack.c:588)
+==4998==    by 0x4E4226E: pthread_create@@GLIBC_2.2.5 (pthread_create.c:539)
+==4998==    by 0x402EAA: CTcpServer::StartListenTh(int) (CTcpServer.cpp:46)
+==4998==    by 0x403072: AcceptThread(void*) (CTcpServer.cpp:89)
+==4998==    by 0x4E416B9: start_thread (pthread_create.c:333)
+==4998==    by 0x56F63DC: clone (clone.S:109)
+==4998== 
+==4998== LEAK SUMMARY:
+==4998==    definitely lost: 254 bytes in 7 blocks
+==4998==    indirectly lost: 0 bytes in 0 blocks
+==4998==      possibly lost: 576 bytes in 2 blocks
+==4998==    still reachable: 105,639 bytes in 7 blocks
+==4998==         suppressed: 0 bytes in 0 blocks
+==4998== Reachable blocks (those to which a pointer was found) are not shown.
+==4998== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==4998== 
+==4998== For counts of detected and suppressed errors, rerun with: -v
+==4998== Use --track-origins=yes to see where uninitialised values come from
+==4998== ERROR SUMMARY: 27 errors from 15 contexts (suppressed: 0 from 0)
+Killed
