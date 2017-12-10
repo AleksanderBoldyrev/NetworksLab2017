@@ -418,7 +418,7 @@ void ClientWorker::ListenLoop(const int& socket)
 			m.body = mes;
 			if (uname.size() > 0)
 			{
-				string * bufs = new string[2];
+				string* bufs = new string[2];
 				bufs[0] = uname;
 				bufs[1] = m.Serialize();
 				SendTo(socket, Serialize(STATE::SND, 2, bufs));
@@ -752,7 +752,7 @@ string ClientWorker::MessageToString(const Message& m)
 	return res.str();
 }
 
-string ClientWorker::Serialize(STATE opcode, unsigned short numarg, const string * ss)
+string ClientWorker::Serialize(STATE opcode, unsigned short numarg, const string* ss)
 {
 	stringstream sstr;
 	sstr << (int)opcode << DELIM_PARSE << (int)numarg << DELIM_PARSE;
