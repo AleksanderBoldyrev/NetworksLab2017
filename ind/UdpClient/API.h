@@ -53,7 +53,7 @@ enum STATE
 	LOGOUT,
 	SND,
 	DEL_US,
-	DEL_MES,
+	DEL_MSG,
 	SH_UNR,
 	SH_ALL,
 	SH_EX,

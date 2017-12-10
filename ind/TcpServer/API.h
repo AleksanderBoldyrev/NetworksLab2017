@@ -9,6 +9,8 @@ using namespace std;
 const char DELIM_PARSE = '|';
 const char DELIM_SERIALIZE = '^';
 const short BYTE = 2;
+const short STRING_BUFFER_SIZE = 1024;
+const short BUFSIZE = 10;
 
 static const int API_SIZE = 18;
 
@@ -49,7 +51,7 @@ enum STATE
 	LOGOUT,
         SND,
 	DEL_US,
-	DEL_MES,
+	DEL_MSG,
 	SH_UNR,
 	SH_ALL,
 	SH_EX,
@@ -74,11 +76,11 @@ const int MESSAGE_STATES[] = {0, 1, 2 };
 class Message
 {
 public:
-    static unsigned long id = 0;
+    unsigned long id = 0;
     string username;
     string date_time;
-    static unsigned long len = 0;
-    static int state = 0;
+    unsigned long len = 0;
+    int state = 0;
     string body;
     string Serialize();
     bool Deserialize(const string& input);

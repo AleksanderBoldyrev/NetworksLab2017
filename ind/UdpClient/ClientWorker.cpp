@@ -672,29 +672,17 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 string ClientWorker::MessageToString(const Message& m)
 {
 	stringstream res;
-	res << "ID: ";
-	res << m.id;
-	res << "\n";
+	res << "ID: " << m.id << "\n";
 
-	res << "TIME: ";
-	res << m.date_time;
-	res << "\n";
+	res << "TIME: " << m.date_time << "\n";
 
-	res << "FROM: ";
-	res << m.username;
-	res << "\n";
+	res << "FROM: " << m.username << "\n";
 
-	res << "LEN: ";
-	res << m.len;
-	res << "\n";
+	res << "LEN: " << m.len << "\n";
 
-	res << "STATE: ";
-	res << MESSAGE_STATES[m.state];
-	res << "\n";
+	res << "STATE: " << MESSAGE_STATES[m.state] << "\n";
 
-	res << "BODY: ";
-	res << m.body;
-	res << "\n";
+	res << "BODY: " << m.body << "\n";
 	return res.str();
 }
 

@@ -14,6 +14,9 @@ using namespace std;
 #define UDP_DG_LEN      32     // UNICODE symbol count in one packet.
 #define TECH_DG_SIZE    10      // Char count, in which the length of the packet and it's number are secured.
 
+const short STRING_BUFFER_SIZE = 1024;
+const short BUFSIZE = 10;
+
 static const int API_SIZE = 18;
 
 static const string API[API_SIZE] =
@@ -49,10 +52,10 @@ enum STATE
 	EXIT,
 	REG,
 	LOG,
-	LUG,
+	LOGOUT,
 	SND,
 	DEL_US,
-	DEL_MES,
+	DEL_MSG,
 	SH_UNR,
 	SH_ALL,
 	SH_EX,

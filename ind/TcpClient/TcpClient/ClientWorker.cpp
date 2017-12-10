@@ -62,6 +62,78 @@ void ClientWorker::StopThread()
 	CloseHandle(tHandle);
 }
 
+string Message::Serialize()
+{
+	stringstream ss;
+	ss << id << DELIM_SERIALIZE;
+	ss << username << DELIM_SERIALIZE;
+	ss << date_time << DELIM_SERIALIZE;
+	ss << len << DELIM_SERIALIZE;
+	ss << state << DELIM_SERIALIZE;
+	std::replace(body.begin(), body.end(), DELIM_SERIALIZE, ' ');
+	ss << body << DELIM_SERIALIZE;
+	return ss.str();
+}
+
+void Message::Clear()
+{
+	id = 0;
+	username = "";
+	date_time = "";
+	len = 0;
+	state = MSTATE_NORMAL;
+	body = "";
+};
+
+bool Message::Deserialize(const string& input)
+{
+	bool res = true;
+	int numarg = 0;
+	string* args = NULL;
+	if (input.size() > 0)
+	{
+		stringstream buf;
+		numarg = 0;
+		// find all delimeters
+		for (int i = 0; i < input.size(); i++)
+		{
+			if (input[i] == DELIM_SERIALIZE)
+				numarg++;
+		}
+		// find all parts
+		if (numarg > 0)
+		{
+			args = new string[numarg];
+			unsigned short cc = 0;
+			for (int i = 0; i < input.size(); i++)
+			{
+				if (input[i] == DELIM_SERIALIZE)
+				{
+					args[cc] = buf.str();
+					cc++;
+					buf.str(std::string());
+				}
+				else
+				{
+					buf << input[i];
+				}
+			}
+		}
+	}
+	if (numarg == MESSAGE_FIELDS_COUNT && args != NULL)
+	{
+		id = stoul(args[0].c_str(), NULL, 10);
+		username = args[1];
+		date_time = args[2];
+		len = stoul(args[3].c_str(), NULL, 10);
+		state = atoi(args[4].c_str());
+		body = args[5];
+	}
+	else
+		res = false;
+	return res;
+};
+
 void ClientWorker::ListenLoop(const int& socket)
 {
 	string buffer;
@@ -181,7 +253,7 @@ void ClientWorker::ListenLoop(const int& socket)
 				cin >> pass;
 				if (log.size() > 0 && pass.size() > 0)
 				{
-					string * bufs = new string[2];
+					string* bufs = new string[2];
 					bufs[0] = log;
 					bufs[1] = pass;
 					SendTo(socket, Serialize(STATE::REG, 2, bufs));
@@ -234,7 +306,7 @@ void ClientWorker::ListenLoop(const int& socket)
 				cin >> pass;
 				if (log.size() > 0 && pass.size() > 0)
 				{
-					string * bufs = new string[2];
+					string* bufs = new string[2];
 					bufs[0] = log;
 					bufs[1] = pass;
 					SendTo(socket, Serialize(STATE::LOG, 2, bufs));
@@ -342,13 +414,13 @@ void ClientWorker::ListenLoop(const int& socket)
 			cin >> uname;
 			cout << "Sending the message. Enter the message to send: " << endl;
 			cin >> mes;
-			m.clear();
+			m.Clear();
 			m.body = mes;
 			if (uname.size() > 0)
 			{
 				string * bufs = new string[2];
 				bufs[0] = uname;
-				bufs[1] = m.serialize();
+				bufs[1] = m.Serialize();
 				SendTo(socket, Serialize(STATE::SND, 2, bufs));
 				delete[] bufs;
 				ListenRecv(socket, buf);
@@ -359,7 +431,7 @@ void ClientWorker::ListenLoop(const int& socket)
 					{
 						if (atoi(args[0].c_str()) == STATE::SERV_OK)
 						{
-							if (m.deserialize(args[1]))
+							if (m.Deserialize(args[1]))
 							{
 								m.body = mes;
 								cout << "Message successfully sent to user " << uname << endl;
@@ -484,7 +556,7 @@ void ClientWorker::ListenLoop(const int& socket)
 					{
 						for (int i = 1; i < numArgCount; i++)
 						{
-							if (m.deserialize(args[i]))
+							if (m.Deserialize(args[i]))
 							{
 								cout << "Unread message with ID = " << m.id << endl;
 								cout << MessageToString(m) << endl;
@@ -528,7 +600,7 @@ void ClientWorker::ListenLoop(const int& socket)
 					{
 						for (int i = 1; i < numArgCount; i++)
 						{
-							if (m.deserialize(args[i]))
+							if (m.Deserialize(args[i]))
 							{
 								cout << "Message with ID = " << m.id << endl;
 								cout << MessageToString(m) << endl;
@@ -578,7 +650,7 @@ void ClientWorker::ListenLoop(const int& socket)
 					{
 						if (atoi(args[0].c_str()) == STATE::SERV_OK)
 						{
-							if (m.deserialize(args[1]))
+							if (m.Deserialize(args[1]))
 							{
 								cout << "Message with ID = " << m.id << endl;
 								cout << MessageToString(m) << endl;
@@ -631,7 +703,7 @@ void ClientWorker::ListenLoop(const int& socket)
 					{
 						if (atoi(args[0].c_str()) == STATE::SERV_OK)
 						{
-							if (m.deserialize(args[1]))
+							if (m.Deserialize(args[1]))
 							{
 								cout << "Message successfully resent to user " << uname << endl;
 								cout << MessageToString(m) << endl;
@@ -754,7 +826,6 @@ STATE ClientWorker::ParseOpCode(const string& buf)
 void ClientWorker::Run(string host, unsigned short port)
 {
 	printf("Starting new client thread with HOST=%s, PORT=%u\n", host.c_str(), port);
-	//isRun = true;
 	int n;
 	WSADATA wsaData;
 	n = WSAStartup(MAKEWORD(2, 2), &wsaData);

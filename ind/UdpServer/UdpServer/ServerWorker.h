@@ -46,11 +46,11 @@ private:
 	string RegisterNewUser(const string &uname, const string &passw, bool &res);
 	string DeleteUser(const string& username);
 	unsigned long AddMessage(Message* message, const string& username, const string& from, string& err);
-	string ShowUnreadMes(const string& username, string& buf);
-	string ShowAllMes(const string& username, string& buf);
+	string ShowUnreadMes(const string& username, unsigned long &cc, string* &buf);
+	string ShowAllMes(const string& username, unsigned long &size, string* &buf);
 	string ShowExactMes(const string& username, string& buf, const string& mesNumber);
 	string DeleteMes(const string& username, const string& mesNumber);
-	string ResendMes(const string& from, const string& mesNumber, const string& to);
+	string ResendMes(const string& from, const string& to, string& buf, const string& mesNumber);
 	string MessageToString(const Message& m);
 	Message** ReadAllMes(const string& username, unsigned long& size);
 	Message* ReadOneMes(const string& username, const unsigned long& id, bool& res);
@@ -68,7 +68,6 @@ private:
 	void CloseSem(const string& name);
 
 	bool ListenInBuf(std::string& MsgStr);
-	void CloseSocket();
 
 	static bool LockMutex(HANDLE& m);
 	static void UnlockMutex(HANDLE& m);
