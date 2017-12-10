@@ -65,10 +65,10 @@ bool Message::Deserialize(const string& input)
 	}
 	if (numarg == MESSAGE_FIELDS_COUNT && args != NULL)
 	{
-		id = strtoul(args[0].c_str(), NULL, 10);
+		id = stoul(args[0].c_str(), NULL, 10);
 		username = args[1];
 		date_time = args[2];
-		len = strtoul(args[3].c_str(), NULL, 10);
+		len = stoul(args[3].c_str(), NULL, 10);
 		state = atoi(args[4].c_str());
 		body = args[5];
 	}
@@ -79,426 +79,6 @@ bool Message::Deserialize(const string& input)
 	return res;
 }
 
-/*bool ServerWorker::MainLoop() {
-	STATE State = NO_OPERATION;
-	string MsgStr;
-	string MessageBuf;
-	string currentUserName;
-	string errMessage;
-	int mesId;
-
-	string sendToUserName;
-	bool isNameValid;
-	bool isSent;
-	bool mesFound = false;
-
-	string buf;
-	bool RegisterState = false, LoginState = false;
-
-	unsigned short numarg;
-	string* args = NULL;
-	string* args2 = NULL;
-	string ff;
-	unsigned long size;
-	int cc = 0;
-	int n = 0;
-
-	unsigned int unread = 0;
-
-	Message * m = NULL;
-
-	while (true) {
-		bool res = ListenInBuf(MsgStr);
-		if (res)
-		{
-			State = Parse(MsgStr, numarg, args);
-			switch (State)
-			{
-			case START:
-				args2 = new string[1];
-				args2[0] = to_string(SERV_OK);
-				ff = Serialize(ANSWER, 1, args2);
-				SendTo(ff);
-				delete[] args2;
-				break;
-			case EXIT:
-				return true;
-				break;
-			case REG:
-				if (args != NULL && numarg > 1)
-				{
-					errMessage = RegisterNewUser(args[0], args[1], RegisterState);
-					if (RegisterState)
-					{
-						args2 = new string[1];
-						args2[0] = to_string(SERV_OK);
-						SendTo(Serialize(ANSWER, 1, args2));
-						delete[] args2;
-					}
-					else
-					{
-						args2 = new string[2];
-						args2[0] = to_string(NO_OPERATION);
-						args2[1] = errMessage;
-						SendTo(Serialize(ANSWER, 2, args2));
-						delete[] args2;
-					}
-				}
-				else
-				{
-					args2 = new string[2];
-					args2[0] = to_string(NO_OPERATION);
-					args2[1] = "Not valid args.";
-					SendTo(Serialize(ANSWER, 2, args2));
-					delete[] args2;
-				}
-				break;
-			case LOG:
-				if (args != NULL && numarg > 1)
-				{
-					errMessage = LoginNewUser(args[0], args[1], LoginState);
-					if (LoginState)
-					{
-						args2 = new string[1];
-						args2[0] = to_string(SERV_OK);
-						SendTo(Serialize(ANSWER, 1, args2));
-						currentUserName = args[0];
-						delete[] args2;
-					}
-					else
-					{
-						args2 = new string[2];
-						args2[0] = to_string(NO_OPERATION);
-						args2[1] = errMessage;
-						SendTo(Serialize(ANSWER, 2, args2));
-						delete[] args2;
-					}
-				}
-				else
-				{
-					args2 = new string[2];
-					args2[0] = to_string(NO_OPERATION);
-					args2[1] = "Not valid args.";
-					SendTo(Serialize(ANSWER, 2, args2));
-					delete[] args2;
-				}
-				break;
-			case LUG:
-				cout << "Logging out." << endl;
-				currentUserName = "";
-				args2 = new string[1];
-				args2[0] = to_string(SERV_OK);
-				SendTo(Serialize(ANSWER, 1, args2));
-				delete[] args2;
-				break;
-			case SND:
-				cout << "Sending the message." << endl;
-				if (args != NULL && numarg > 1)
-				{
-					m = new Message();
-					if (m->Deserialize(args[1]) && args[0].size() > 0)
-					{
-						if (currentUserName.size() > 0) { mesId = AddMessage(m, args[0], currentUserName, errMessage); }
-						else { mesId = 0; }
-						if (mesId == 0)
-						{
-							args2 = new string[2];
-							args2[0] = to_string(NO_OPERATION);
-							args2[1] = "Error while sending the message [" + errMessage + "]";
-							SendTo(Serialize(ANSWER, 2, args2));
-							delete[] args2;
-						}
-						else
-						{
-							args2 = new string[2];
-							m->body = "";
-							args2[0] = to_string(SERV_OK);
-							args2[1] = m->Serialize();
-							SendTo(Serialize(ANSWER, 2, args2));
-							delete[] args2;
-						}
-					}
-					delete m;
-				}
-				break;
-			case DEL_US:
-				cout << "Deleting user." << endl;
-				if (currentUserName.size() > 0)
-				{
-					errMessage = DeleteUser(currentUserName);
-					currentUserName = "";
-					args2 = new string[2];
-					if (errMessage.size() == 0)
-					{
-						args2[0] = to_string(SERV_OK);
-						args2[1] = "";
-					}
-					else
-					{
-						args2[0] = to_string(NO_OPERATION);
-						args2[1] = errMessage;
-					}
-					SendTo(Serialize(ANSWER, 2, args2));
-					delete[] args2;
-				}
-				break;
-			case DEL_MES:
-				cout << "Deleting message." << endl;
-				if (args != NULL && numarg > 0)
-				{
-					if (currentUserName.size() > 0)
-					{
-						errMessage = DeleteMes(currentUserName, args[0]);
-						currentUserName = "";
-						args2 = new string[2];
-						if (errMessage.size() == 0)
-						{
-							args2[0] = to_string(SERV_OK);
-							args2[1] = "";
-						}
-						else
-						{
-							args2[0] = to_string(NO_OPERATION);
-							args2[1] = errMessage;
-						}
-						SendTo(Serialize(ANSWER, 2, args2));
-						delete[] args2;
-					}
-				}
-				break;
-			case SH_UNR:
-				size = 0;
-				cout << "Showing unread messages." << endl;
-				if (args != NULL && numarg >= 0)
-				{
-					if (currentUserName.size() > 0)
-					{
-						Message** mm;
-						mm = ReadAllMes(currentUserName, size);
-						bool changes = false;
-						if (size>0)
-						{
-							for (unsigned long i = 0; i<size; i++)
-							{
-								if (mm[i] != NULL)
-								{
-									if (mm[i][0].state == MSTATE_UNREAD)
-									{
-										unread++;
-									}
-								}
-							}
-							args2 = new string[unread + 1];
-							args2[0] = to_string(SERV_OK);
-							cc = 1;
-							for (unsigned int i = 0; i<size; i++)
-							{
-								if (mm[i][0].state == MSTATE_UNREAD)
-								{
-									args2[cc] = mm[i][0].Serialize();
-									changes = true;
-									mm[i][0].state = MSTATE_NORMAL;
-									cc++;
-								}
-							}
-							if (unread > 0) SendTo(Serialize(ANSWER, unread + 1, args2));
-							if (changes) WriteMessages(currentUserName, mm, size, true);
-							for (unsigned long i = 0; i<size; i++)
-							{
-								if (mm[i] != NULL)
-								{
-									delete mm[i];
-								}
-							}
-							delete[] args2;
-						}
-						else
-							cout << "No messages found!\n";
-					}
-					if (unread == 0)
-					{
-						args2 = new string[2];
-						args2[0] = to_string(NO_OPERATION);
-						args2[1] = "Error while showing unread the messages. No messages found.";
-						SendTo(Serialize(ANSWER, 2, args2));
-						delete[] args2;
-					}
-				}
-				break;
-			case SH_ALL:
-				size = 0;
-				cout << "Showing all messages." << endl;
-				if (args != NULL && numarg >= 0)
-				{
-					if (currentUserName.size() > 0)
-					{
-						Message** mm;
-
-						mm = ReadAllMes(currentUserName, size);
-						bool changes = false;
-						if (size>0)
-						{
-							args2 = new string[size + 1];
-							args2[0] = to_string(SERV_OK);
-							for (unsigned long i = 1; i <= size; i++)
-							{
-								if (mm[i - 1] != NULL)
-								{
-									args2[i] = mm[i - 1][0].Serialize();
-									if (mm[i - 1][0].state == MSTATE_UNREAD)
-									{
-										mm[i - 1][0].state = MSTATE_NORMAL;
-										changes = true;
-									}
-								}
-							}
-							SendTo(Serialize(ANSWER, size + 1, args2));
-							if (changes) WriteMessages(currentUserName, mm, size, true);
-							for (unsigned long i = 0; i<size; i++)
-							{
-								if (mm[i] != NULL)
-								{
-									delete mm[i];
-								}
-							}
-							delete[] args2;
-						}
-						else
-							cout << "No messages found!\n";
-					}
-					if (size == 0)
-					{
-						args2 = new string[2];
-						args2[0] = to_string(NO_OPERATION);
-						args2[1] = "Error while showing all messages.";
-						SendTo(Serialize(ANSWER, 2, args2));
-						delete[] args2;
-					}
-				}
-				break;
-			case SH_EX:
-				mesFound = false;
-				cout << "Showing the exact message." << endl;
-				size = 0;
-				if (args != NULL && numarg >= 1)
-				{
-					if (currentUserName.size() > 0)
-					{
-						mesId = atoi(args[0].c_str());
-						Message** mm;
-						mm = ReadAllMes(currentUserName, size);
-						bool changes = false;
-						if (size>0)
-						{
-							for (unsigned long i = 0; i<size; i++)
-							{
-								if (mm[i] != NULL)
-								{
-									if (mm[i][0].id == mesId)
-									{
-										args2 = new string[2];
-										args2[0] = to_string(SERV_OK);
-										args2[1] = mm[i][0].Serialize();
-										mesFound = true;
-										if (mm[i][0].state == MSTATE_UNREAD)
-										{
-											mm[i][0].state = MSTATE_NORMAL;
-											changes = true;
-										}
-									}
-								}
-							}
-							if (mesFound) SendTo(Serialize(ANSWER, 2, args2));
-							if (changes) WriteMessages(currentUserName, mm, size, true);
-							for (unsigned long i = 0; i<size; i++)
-							{
-								if (mm[i] != NULL)
-								{
-									delete mm[i];
-								}
-							}
-							delete[] args2;
-						}
-						else
-							cout << "No messages found!\n";
-					}
-					if (!mesFound)
-					{
-						args2 = new string[2];
-						args2[0] = to_string(NO_OPERATION);
-						args2[1] = "Error while showing the messages. No messages found.";
-						SendTo(Serialize(ANSWER, 2, args2));
-						delete[] args2;
-					}
-				}
-				break;
-			case RSND:
-				cout << "Resending the exact message." << endl;
-				mesFound = false;
-				size = 0;
-				if (args != NULL && numarg >= 2)
-				{
-					if (currentUserName.size() > 0)
-					{
-						mesId = atoi(args[0].c_str());
-						Message** mm;
-						mm = ReadAllMes(currentUserName, size);
-						bool changes = false;
-						if (size>0)
-						{
-							args2 = new string[2];
-							for (unsigned long i = 0; i<size; i++)
-							{
-								if (mm[i] != NULL)
-								{
-									if (mm[i][0].id == mesId)
-									{
-										mesId = AddMessage(mm[i], args[1], currentUserName, errMessage);
-										if (mesId == 0)
-										{
-											args2[0] = to_string(NO_OPERATION);
-											args2[1] = "Error while resending the messages. Aim user not found.";
-										}
-										else
-										{
-											args2[0] = to_string(SERV_OK);
-											args2[1] = mm[i][0].Serialize();
-										}
-										mesFound = true;
-									}
-								}
-							}
-							if (mesFound) SendTo(Serialize(ANSWER, 2, args2));
-							for (unsigned long i = 0; i<size; i++)
-							{
-								if (mm[i] != NULL)
-								{
-									delete mm[i];
-								}
-							}
-							delete[] args2;
-						}
-						else
-							cout << "No messages found!\n";
-					}
-					if (!mesFound && size == 0)
-					{
-						args2 = new string[2];
-						args2[0] = to_string(NO_OPERATION);
-						args2[1] = "Error while resending the messages. Message not found.";
-						SendTo(Serialize(ANSWER, 2, args2));
-						delete[] args2;
-					}
-				}
-				break;
-			default:
-				cout << "Unknown state: " << State << endl;
-				break;
-			}
-		}
-	}
-	return true;
-}*/
 bool ServerWorker::MainLoop()
 {
 	STATE State = NO_OPERATION;
@@ -1130,29 +710,17 @@ string ServerWorker::ResendMes(const string& from, const string& to, string& buf
 string ServerWorker::MessageToString(const Message& m)
 {
 	stringstream res;
-	res << "ID: ";
-	res << m.id;
-	res << "\n";
+	res << "ID: " << m.id << "\n";
 
-	res << "TIME: ";
-	res << m.date_time;
-	res << "\n";
+	res << "TIME: " << m.date_time << "\n";
 
-	res << "FROM: ";
-	res << m.username;
-	res << "\n";
+	res << "FROM: " << m.username << "\n";
+	
+	res << "LEN: " << m.len << "\n";
 
-	res << "LEN: ";
-	res << m.len;
-	res << "\n";
+	res << "STATE: " << m.state << "\n";
 
-	res << "STATE: ";
-	res << m.state;
-	res << "\n";
-
-	res << "BODY: ";
-	res << m.body;
-	res << "\n";
+	res << "BODY: " << m.body << "\n";
 	return res.str();
 }
 
@@ -1195,7 +763,7 @@ Message** ServerWorker::ReadAllMes(const string& username, unsigned long& res)
 					mes = (Message**)realloc(mes, res * sizeof(Message*));
 					mes[res - 1] = new Message();
 					buf.replace(0, string(MES_ID).size(), "");
-					mes[res - 1][0].id = strtoul(buf.c_str(), NULL, 10);
+					mes[res - 1][0].id = stoul(buf.c_str(), NULL, 10);
 					printf("ID = %d\n", mes[res - 1][0].id);
 					state++;
 					break;
@@ -1213,14 +781,14 @@ Message** ServerWorker::ReadAllMes(const string& username, unsigned long& res)
 					break;
 				case 3: // len
 					buf.replace(0, string(MES_LEN).size(), "");
-					mes[res - 1][0].len = strtoul(buf.c_str(), NULL, 10);
+					mes[res - 1][0].len = stoul(buf.c_str(), NULL, 10);
 					size = mes[res - 1][0].len;
 					printf("SIZE = %d\n", mes[res - 1][0].len);
 					state++;
 					break;
 				case 4: // state
 					buf.replace(0, string(MES_STATE).size(), "");
-					mes[res - 1][0].state = strtoul(buf.c_str(), NULL, 10);
+					mes[res - 1][0].state = stoul(buf.c_str(), NULL, 10);
 					printf("STATE = %d\n", mes[res - 1][0].state);
 					state++;
 					break;
@@ -1267,7 +835,7 @@ Message* ServerWorker::ReadOneMes(const string& username, const unsigned long& i
 					delete mes;
 					mes = new Message();
 					buf.replace(0, string(MES_ID).size(), "");
-					mes->id = strtoul(buf.c_str(), NULL, 10);
+					mes->id = stoul(buf.c_str(), NULL, 10);
 					printf("ID = %d\n", mes->id);
 					state++;
 					break;
@@ -1285,14 +853,14 @@ Message* ServerWorker::ReadOneMes(const string& username, const unsigned long& i
 					break;
 				case 3: // len
 					buf.replace(0, string(MES_LEN).size(), "");
-					mes->len = strtoul(buf.c_str(), NULL, 10);
+					mes->len = stoul(buf.c_str(), NULL, 10);
 					size = mes->len;
 					printf("SIZE = %d\n", mes->len);
 					state++;
 					break;
 				case 4: // state
 					buf.replace(0, string(MES_STATE).size(), "");
-					mes->state = strtoul(buf.c_str(), NULL, 10);
+					mes->state = stoul(buf.c_str(), NULL, 10);
 					printf("STATE = %d\n", mes->state);
 					state++;
 					break;
