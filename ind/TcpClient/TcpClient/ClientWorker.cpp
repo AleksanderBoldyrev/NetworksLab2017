@@ -141,7 +141,7 @@ void ClientWorker::ListenLoop(const int& socket)
 	int error = 0;
 	int c = 0;
 	state = STATE::START;
-	string buf;
+	char* buf;
 	unsigned int answerCode;
 	unsigned short numArgCount;
 	string* args = NULL;
@@ -166,15 +166,8 @@ void ClientWorker::ListenLoop(const int& socket)
 		switch (state)
 		{
 		case START:
-			SendTo(socket, Serialize(START, 0, NULL));
+			SendTo(socket, Serialize(START, 0, NULL).c_str());
 			ListenRecv(socket, buf);
-			break;
-		case NO_OPERATION:
-			SendTo(socket, Serialize(NO_OPERATION, 0, NULL));
-			ListenRecv(socket, buf);
-			break;
-		case ANSWER:
-			cout << "Got the ANSWER message from server." << endl;
 			break;
 		case INIT:
 			df = false;
@@ -204,7 +197,7 @@ void ClientWorker::ListenLoop(const int& socket)
 			continue;
 			break;
 		case EXIT:
-			SendTo(socket, Serialize(EXIT, 0, NULL));
+			SendTo(socket, Serialize(EXIT, 0, NULL).c_str());
 			ListenRecv(socket, buf);
 			break;
 		case REG:
@@ -217,9 +210,9 @@ void ClientWorker::ListenLoop(const int& socket)
 				string * bufs = new string[2];
 				bufs[0] = log;
 				bufs[1] = pass;
-				SendTo(socket, Serialize(REG, 2, bufs));
-				delete[] bufs;
+				SendTo(socket, Serialize(REG, 2, bufs).c_str());
 				ListenRecv(socket, buf);
+				delete[] bufs;
 			}
 			else
 			{
@@ -238,9 +231,9 @@ void ClientWorker::ListenLoop(const int& socket)
 				string * bufs = new string[2];
 				bufs[0] = log;
 				bufs[1] = pass;
-				SendTo(socket, Serialize(LOG, 2, bufs));
-				delete[] bufs;
+				SendTo(socket, Serialize(LOG, 2, bufs).c_str());
 				ListenRecv(socket, buf);
+				delete[] bufs;
 			}
 			else
 			{
@@ -298,7 +291,7 @@ void ClientWorker::ListenLoop(const int& socket)
 			break;
 		case LOGOUT:
 			cout << "Logging out.\n" << endl;
-			SendTo(socket, Serialize(LOGOUT, 0, NULL));
+			SendTo(socket, Serialize(LOGOUT, 0, NULL).c_str());
 			ListenRecv(socket, buf);
 			break;
 		case SND:
@@ -313,14 +306,14 @@ void ClientWorker::ListenLoop(const int& socket)
 				string * bufs = new string[2];
 				bufs[0] = uname;
 				bufs[1] = m.Serialize();
-				SendTo(socket, Serialize(SND, 2, bufs));
-				delete[] bufs;
+				SendTo(socket, Serialize(SND, 2, bufs).c_str());
 				ListenRecv(socket, buf);
+				delete[] bufs;
 			}
 			break;
 		case DEL_US:
 			cout << "Deleting user." << endl;
-			SendTo(socket, Serialize(DEL_US, 0, NULL));
+			SendTo(socket, Serialize(DEL_US, 0, NULL).c_str());
 			ListenRecv(socket, buf);
 			break;
 		case DEL_MSG:
@@ -333,18 +326,18 @@ void ClientWorker::ListenLoop(const int& socket)
 				string bufs[1];
 				sss << mesId;
 				bufs[0] = sss.str();
-				SendTo(socket, Serialize(DEL_MSG, 1, bufs));
+				SendTo(socket, Serialize(DEL_MSG, 1, bufs).c_str());
 				ListenRecv(socket, buf);
 			}
 			break;
 		case SH_UNR:
 			cout << "Showing unread messages." << endl;
-			SendTo(socket, Serialize(SH_UNR, 0, NULL));
+			SendTo(socket, Serialize(SH_UNR, 0, NULL).c_str());
 			ListenRecv(socket, buf);
 			break;
 		case SH_ALL:
 			cout << "Showing all messages." << endl;
-			SendTo(socket, Serialize(SH_ALL, 0, NULL));
+			SendTo(socket, Serialize(SH_ALL, 0, NULL).c_str());
 			ListenRecv(socket, buf);
 			break;
 		case SH_EX:
@@ -357,7 +350,7 @@ void ClientWorker::ListenLoop(const int& socket)
 				string bufs[1];
 				sss << mesId;
 				bufs[0] = sss.str();
-				SendTo(socket, Serialize(SH_EX, 1, bufs));
+				SendTo(socket, Serialize(SH_EX, 1, bufs).c_str());
 				ListenRecv(socket, buf);
 			}
 			break;
@@ -374,7 +367,7 @@ void ClientWorker::ListenLoop(const int& socket)
 				sss << mesId;
 				bufs[0] = sss.str();
 				bufs[1] = uname;
-				SendTo(socket, Serialize(RSND, 2, bufs));
+				SendTo(socket, Serialize(RSND, 2, bufs).c_str());
 				ListenRecv(socket, buf);
 			}
 			break;
@@ -910,45 +903,57 @@ void ClientWorker::Run(string host, unsigned short port)
 	}
 }
 
-void ClientWorker::SendTo(SOCKET socket, const string& message)
+void ClientWorker::SendTo(SOCKET socket, const char* message)
 {
-	cout << "Send to server: " << message << endl;
 	int res = 0;
-	int size = message.size();
-	stringstream ss;
-	ss << size;
-	string s = ss.str();
-	while (s.size() < 10)
+	int size = strlen(message);
+	char* ss = new char[size + BUFSIZE];
+	char* sizeBuf = new char[BUFSIZE];
+	snprintf(sizeBuf, BUFSIZE, "%d", size);
+	printf("SB = %s\n", sizeBuf);
+	int shift = BUFSIZE - strlen(sizeBuf);
+	for (int i = BUFSIZE - 1; i >= 0; i--)
 	{
-		s.insert(s.begin(), '0');
+		if (i >= shift)
+			ss[i] = sizeBuf[i - shift];
+		else
+			ss[i] = '0';
 	}
-	s += message;
-	res = send(socket, s.c_str(), s.size(), 0);
-	if (res != s.size())
-		printf("Send failed: %d != %d!\n", res, s.size());
+	for (int i = BUFSIZE; i < size + BUFSIZE; i++)
+	{
+		ss[i] = message[i - BUFSIZE];
+	}
+	printf("String to send: %s\n", ss);
+	res = send(socket, ss, size + BUFSIZE, 0);
+	if (res != size + BUFSIZE)
+		printf("Send failed: %s != %zd!\n", ss, size);
 }
 
-bool ClientWorker::ListenRecv(SOCKET socket, std::string& MsgStr)
+bool ClientWorker::ListenRecv(SOCKET socket, char* &MsgStr)
 {
-	char* c = new char[BUFSIZE];
+	char c[BUFSIZE];
 	unsigned int size = 0;
-	int ssize = recv(socket, c, BUFSIZE, 0);
-	if (ssize == 10)
+	int res = recv(socket, c, BUFSIZE, 0);
+	if (res == BUFSIZE)
 	{
 		size = atoi(c);
 		char* recvbuf = new char[size];
-
 		int res = recv(socket, recvbuf, size, 0);
+		printf("String received: %s\n", recvbuf);
 		if (res > 0)
 		{
-			MsgStr.clear();
+			int count = 0;
 			for (int i = 0; i < res; i++)
-				if (recvbuf[i] != '\n' && recvbuf[i] != '\r' && recvbuf[i] != '\t' && recvbuf[i] != '\0')
-					MsgStr.push_back(recvbuf[i]);
+				if (recvbuf[i] != '\r' && recvbuf[i] != '\0')
+					count++;
+			MsgStr = new char[count];
+			count = 0;
+			for (int i = 0; i < res; i++)
+				if (recvbuf[i] != '\r' && recvbuf[i] != '\0')
+					MsgStr[count++] = recvbuf[i];
+
 		}
 	}
-	else
-		return false;
-	cout << "Recieved: " << MsgStr << endl;
+	else return false;
 	return true;
 }

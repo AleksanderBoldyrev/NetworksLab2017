@@ -60,7 +60,7 @@ private:
     string Serialize(STATE opcode, unsigned short numarg, const string* ss);
     STATE Parse(const string& input, unsigned short& numarg, string* &args);
     
-    void ReplaceBuf(string& buf);
+    void ReplaceBuf(string& buf, const string& s);
     
     void WriteToFile(const string& username, Message* message);    
     

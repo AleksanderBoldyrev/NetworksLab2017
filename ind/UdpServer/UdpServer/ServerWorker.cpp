@@ -355,14 +355,16 @@ void ServerWorker::CloseSem(const string& name)
 	CloseHandle(sem);
 }
 
-string ServerWorker::GetPasswFilePth(const string& username) {
+string ServerWorker::GetPasswFilePth(const string& username) 
+{
 	string pth = USERS_FOLDER;
 	pth += username;
 	pth += PASSW_FILE;
 	return pth;
 }
 
-string ServerWorker::GetMessageFilePth(const string& username) {
+string ServerWorker::GetMessageFilePth(const string& username) 
+{
 	string pth = USERS_FOLDER;
 	pth += username;
 	pth += MESSAGE_FILE;
@@ -382,80 +384,77 @@ bool ServerWorker::CheckUser(const string& name)
 	return pass2.size()>0;
 }
 
-string ServerWorker::RegisterNewUser(const string &uname, const string &passw, bool &res) {
+string ServerWorker::RegisterNewUser(const string &uname, const string &passw, bool &res) 
+{
 	int stat;
-	string mes;
 	res = false;
-	if (uname.length() > 0 && passw.length() > 0) {
+	if (uname.length() > 0 && passw.length() > 0) 
+	{
 
 		ifstream fin(GetPasswFilePth(uname).c_str());
-		if (!fin.good()) {
-			string pth = "./users/";
-			_mkdir(pth.c_str());
-			pth += uname;
-
-			stat = _mkdir(pth.c_str());
-			if (stat == 0) {
-				printf("Dir %s created successfully.\n", uname.c_str());
-				pth += PASSW_FILE;
-				ofstream out(pth.c_str());
-				if (out.good()) {
-					out << passw;
-					out.close();
-					res = true;
-					ofstream mFile(GetMessageFilePth(uname).c_str());
-					mFile.close();
-				}
-				else {
-					printf("ERROR: Password is not saved.\n");
-					mes.append("Internal server issue. Please, try again.\n");
-				}
-			}
-			else {
-				printf("ERROR: Failed to create dir. ErrCode = %d\n", stat);
-				mes.append("Internal server issue. Please, try again.\n");
-			}
-		}
-		else {
+		if (fin.good()) 
+		{
 			printf("ERROR: User already exists.\n");
-			mes.append("Username is already used by another user. Please, choose other option for username.\n");
+			return "Username is already used by another user. Please, choose other option for username.\n";
 		}
+		string pth = "./users/";
+		_mkdir(pth.c_str());
+		pth += uname;
+
+		stat = _mkdir(pth.c_str());
+		if (stat != 0)
+		{
+			printf("ERROR: Failed to create dir. ErrCode = %d\n", stat);
+			return "Internal server issue. Please, try again.\n";
+		}
+		printf("Dir %s created successfully.\n", uname.c_str());
+		pth += PASSW_FILE;
+		ofstream out(pth.c_str());
+		if (!out.good())
+		{
+			printf("ERROR: Password is not saved.\n");
+			return "Internal server issue. Please, try again.\n";
+		}
+		out << passw;
+		out.close();
+		res = true;
+		ofstream mFile(GetMessageFilePth(uname).c_str());
+		mFile.close();
 	}
-	return mes;
+	return "";
 }
 
-string ServerWorker::LoginNewUser(const string &uname, const string &passw, bool &res) {
-	//int stat;
+string ServerWorker::LoginNewUser(const string &uname, const string &passw, bool &res) 
+{
 	string username = "";
-	string mes;
 	res = false;
-	if (uname.length() > 0 && passw.length() > 0) {
+	if (uname.length() > 0 && passw.length() > 0) 
+	{
 		string pass2;
 		string pth = GetPasswFilePth(uname);
 		OpenSem(uname);
 		ifstream fin(pth.c_str());
-		if (fin.good()) {
-			fin >> pass2;
-			if (pass2.compare(passw) == 0) {
-				res = true;
-				printf("Successfully logged in! User: %s\n", uname.c_str());
-			}
-			else {
-				printf("ERROR: Password is not correct or there is no access to the pass. path = \"%s\"", pth.c_str());
-				mes.append("Internal server issue. Please, try again.\n");
-			}
-		}
-		else {
+		if (!fin.good()) 
+		{
 			printf("ERROR: Could not load file %s.\n", pth.c_str());
-			mes.append("Internal server issue. Please, try again.\n");
+			return "Internal server issue. Please, try again.\n";
 		}
+		fin >> pass2;
+		if (pass2.compare(passw) != 0)
+		{
+			printf("ERROR: Password is not correct or there is no access to the pass. path = \"%s\"", pth.c_str());
+			return "Internal server issue. Please, try again.\n";
+		}
+		res = true;
+		printf("Successfully logged in! User: %s\n", uname.c_str());
 		fin.close();
 		CloseSem(uname);
 	}
-	return mes;
+	return "";
 }
 
-string ServerWorker::DeleteUser(const string& username) {
+string ServerWorker::DeleteUser(const string& username) 
+{
 	string buf;
 	time_t seconds = time(NULL);
 	tm* timeinfo = localtime(&seconds);
@@ -464,7 +463,8 @@ string ServerWorker::DeleteUser(const string& username) {
 	int position = buf.find('\n');
 	buf.replace(position, 1, "");
 	position = buf.find(" ");
-	while (position != string::npos) {
+	while (position != string::npos) 
+	{
 		buf.replace(position, 1, "_");
 		position = buf.find(" ", position + 1);
 	}
@@ -480,13 +480,15 @@ string ServerWorker::DeleteUser(const string& username) {
 	return "";
 }
 
-unsigned long ServerWorker::AddMessage(Message* message, const string& username, const string& from, string& err) {
+unsigned long ServerWorker::AddMessage(Message* message, const string& username, const string& from, string& err) 
+{
 	unsigned long lastId = LastMesID(username) + 1;
 	bool isNameValid = false;
 	isNameValid = CheckUser(username);
 	if (isNameValid)
 	{
-		if (lastId > 0 && message != NULL) {
+		if (lastId > 0 && message != NULL) 
+		{
 			time_t seconds = time(NULL);
 			tm* timeinfo = localtime(&seconds);
 			message->date_time = asctime(timeinfo);
@@ -518,7 +520,7 @@ void ServerWorker::WriteToFile(const string& username, Message* message)
 	CloseSem(username);
 }
 
-bool ServerWorker::WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode)//const Message** m, const unsigned long& size)
+bool ServerWorker::WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode)
 {
 	if (m != NULL && size >= 0)
 	{
@@ -726,7 +728,6 @@ string ServerWorker::MessageToString(const Message& m)
 
 unsigned long ServerWorker::LastMesID(const string& username)
 {
-	//Don't add mutex here, blocking should be in the function, which calls this one above!!!
 	unsigned long res = 0;
 	unsigned long size = 0;
 	Message ** buf = ReadAllMes(username, size);

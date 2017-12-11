@@ -63,8 +63,10 @@ public:
 	void StartThread(string* params);
 	void StopThread();
 	static void* HandleThread(void* args);
-	void SendTo(int s, const string& message);
-	bool ListenRecv(int s, std::string& MsgStr);
+	//void SendTo(int s, const string& message);
+	//bool ListenRecv(int s, std::string& MsgStr);
+        void SendTo(int s, const char* message);
+	bool ListenRecv(int s, char* &MsgStr);
 	string Serialize(unsigned int opcode, unsigned short numarg, const string* ss);
 	STATE Parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);

@@ -31,8 +31,10 @@ public:
 	void StartThread(string* params);
 	void StopThread();
 	static DWORD WINAPI HandleThread(LPVOID args);
-	void SendTo(SOCKET s, const string& message);
-	bool ListenRecv(SOCKET s, std::string& MsgStr);
+	//void SendTo(SOCKET s, const string& message);
+	//bool ListenRecv(SOCKET s, std::string& MsgStr);
+	void SendTo(SOCKET s, const char* message);
+	bool ListenRecv(SOCKET s, char* &MsgStr);
 	string Serialize(STATE opcode, unsigned short numarg, const string* ss);
 	STATE Parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);

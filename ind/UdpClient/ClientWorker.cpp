@@ -158,7 +158,6 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 	Message m;
 	string mes;
 
-
 	while (1)
 	{
 		if (error != 0)
@@ -221,8 +220,8 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					bufs[0] = log;
 					bufs[1] = pass;
 					SendTo(sockfd, Serialize(REG, 2, bufs));
-					delete[] bufs;
 					ListenRecv(sockfd, buf);
+					delete[] bufs;
 				}
 				else
 				{
@@ -242,8 +241,8 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					bufs[0] = log;
 					bufs[1] = pass;
 					SendTo(sockfd, Serialize(LOG, 2, bufs));
-					delete[] bufs;
 					ListenRecv(sockfd, buf);
+                                        delete[] bufs;
 				}
 				else
 				{
@@ -317,8 +316,8 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				bufs[0] = uname;
 				bufs[1] = m.Serialize();
 				SendTo(sockfd, Serialize(SND, 2, bufs));
-				delete[] bufs;
 				ListenRecv(sockfd, buf);
+				delete[] bufs;
 			}
 			break;
 		case DEL_US:
@@ -858,7 +857,72 @@ STATE ClientWorker::ParseOpCode(const string& buf)
 	return NO_OPERATION;
 }
 
-void ClientWorker::SendTo(int socket, const string& temp) 
+
+
+bool ServerWorker::ListenRecv(char* &MsgStr) 
+{
+    char c[BUFSIZE];
+    unsigned int size = 0;
+    int res = recv(socket, c, BUFSIZE, 0);
+    if (res == BUFSIZE)
+    {
+        size = atoi(c);
+    
+        char recvbuf[size];
+        int res = recv(socket, recvbuf, size, 0);
+        printf("String received: %s\n", recvbuf);
+        if (res > 0) 
+        {
+            int count = 0;
+            for (int i = 0; i < res; i++)
+                if (recvbuf[i] != '\r' && recvbuf[i] != '\0')
+                    count++;
+            MsgStr = new char[count];
+            count= 0;
+            for (int i = 0; i < res; i++)
+                if (recvbuf[i] != '\r' && recvbuf[i] != '\0')
+                    MsgStr[count++] = recvbuf[i];
+                    
+        }
+    }
+    else return false;
+    return true;
+}
+
+void ServerWorker::SendTo(const char* message) {
+    if (message != NULL) 
+    {
+        int res = 0;
+        int size = strlen(message);
+        char* ss = new char[size + BUFSIZE];
+        char* sizeBuf = new char[BUFSIZE];
+        snprintf(sizeBuf, BUFSIZE, "%d", size);
+        printf("SB = %s\n", sizeBuf);
+        int shift = BUFSIZE - strlen(sizeBuf);
+        for (int i = BUFSIZE - 1; i >= 0; i--)
+        {
+            if (i >= shift)
+                ss[i] = sizeBuf[i - shift];
+            else 
+                ss[i] = '0';
+        }
+        for (int i = BUFSIZE; i < size + BUFSIZE; i++)
+        {
+            ss[i] = message[i - BUFSIZE];
+        }
+        printf("String to send: %s\n", ss);
+        res = send(socket, ss, size+BUFSIZE, 0);
+        if (res != size + BUFSIZE)
+            printf("Send failed: %s != %zd!\n", ss, size);
+        delete[] ss;
+    }
+    else 
+        printf("Failed to send. Received NULL message.");
+}
+
+
+
+/*void ClientWorker::SendTo(int socket, const string& temp) 
 {
     if (temp.size() > 0) 
     {
@@ -882,6 +946,73 @@ void ClientWorker::SendTo(int socket, const string& temp)
 }
 
 bool ClientWorker::ListenRecv(int socket, std::string& MsgStr) {
+    char buffer[UDP_DG_LEN];
+    size_t len = TECH_DG_SIZE;
+    size_t res = 0;
+    string s;
+    MsgStr.clear();
+    memset(buffer, 0, sizeof(buffer));
+    while (res = recvfrom(socket, buffer, UDP_DG_LEN, 0, (struct sockaddr *) &servIn, &servIn_size) > 0) {
+        s.clear();
+        for (int i=0; i<UDP_DG_LEN; i++)
+        {
+            s+=buffer[i];
+            if (buffer[i]==EOF_SYM)
+                break;
+        }
+        memset(buffer, 0, sizeof(buffer));
+        s.erase(std::remove(s.begin(), s.end(), '\r'), s.end());
+        s.erase(std::remove(s.begin(), s.end(), '\0'), s.end());
+        cout << "Recieved: " << s << endl;
+        string str = s;
+        size_t num = 0;
+        if (s.length() > TECH_DG_SIZE) {
+            string c = str.substr(0, TECH_DG_SIZE);
+            str = str.substr(TECH_DG_SIZE, str.length() - TECH_DG_SIZE);
+            num = atoi(c.c_str());
+        }
+        if (lastPacketNumRecv + 1 == num) {
+             lastPacketNumRecv = num;
+            for (int i = 0; i < str.length(); i++) {
+                if (str[i] == EOF_SYM) 
+                {                    
+                    MsgStr.append(tempRBuf);
+                    servOut = servIn;
+                    tempRBuf = "";
+                    return true;
+                } else
+                    tempRBuf += str[i];
+            }
+        }
+        else
+            cout << "Packet order mismatch!\n";
+    }
+    return true;
+}*/
+void ClientWorker::SendTo(int socket, const char* temp) 
+{
+    if (temp.size() > 0) 
+    {
+        string message = temp + EOF_SYM;
+        int tolen = sizeof (servOut);
+        string sndBuf;
+        long int curPos = 0;
+        while (curPos < message.length()) 
+        {
+            int num = ++lastPacketNumSend;
+            sndBuf = intToStr(num);
+            int tLen = min((int)(message.length()-curPos), UDP_DG_LEN - TECH_DG_SIZE);
+            sndBuf += message.substr(curPos, tLen);
+            curPos += tLen;
+            cout << "Sending: " << sndBuf << endl;
+            int count = sendto(socket, sndBuf.c_str(), sndBuf.length(), 0, (sockaddr*) & servOut, tolen);
+            if (count != sndBuf.length())
+                cout << "Send data mismatch: send " << count << ", have " << sndBuf.length() << endl;
+        }
+    }
+}
+
+bool ClientWorker::ListenRecv(int socket, std::char* &MsgStr) {
     char buffer[UDP_DG_LEN];
     size_t len = TECH_DG_SIZE;
     size_t res = 0;

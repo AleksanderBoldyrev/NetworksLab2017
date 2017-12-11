@@ -122,6 +122,9 @@ bool ServerWorker::MainLoop()
     string* args2 = new string[STRING_BUFFER_SIZE];
     char* resBuf;
     int argsCount = 0;
+    const string servOk = itoa(SERV_OK);
+    const string noOp = itoa(NO_OPERATION);
+    
     unsigned long mesCount = 0;
     unsigned long size;
     Message * m = NULL;
@@ -136,10 +139,10 @@ bool ServerWorker::MainLoop()
             switch (State) 
             {
                     case START:  
-                        args2[0] = itoa(SERV_OK);
+                        args2[0] = servOk;
                         break;
                     case EXIT: 
-                        args2[0] = itoa(SERV_OK);
+                        args2[0] = servOk;
                         printf("Client with ID: %d is disconnect!\n", socket);
                         break;
                     case REG: 
@@ -148,19 +151,19 @@ bool ServerWorker::MainLoop()
                             errMessage = RegisterNewUser(args[0], args[1], RegisterState);
                             if (RegisterState)
                             {
-                                args2[0] = itoa(SERV_OK);
+                                args2[0] = servOk;
                             }
                             else 
                             {
                                 argsCount = 2;
-                                args2[0]= itoa(NO_OPERATION);
+                                args2[0]= noOp;
                                 args2[1] = errMessage;
                             }
                         }
                         else 
                         {
                             argsCount = 2;
-                            args2[0]= itoa(NO_OPERATION);
+                            args2[0]= noOp;
                             args2[1] = "Not valid args.";
                         }
                         break;
@@ -170,27 +173,27 @@ bool ServerWorker::MainLoop()
                             errMessage = LoginNewUser(args[0], args[1], LoginState);
                             if (LoginState)
                             {
-                                args2[0] = itoa(SERV_OK);
+                                args2[0] = servOk;
                                 currentUserName = args[0];
                             }
                             else 
                             {
                                 argsCount = 2;
-                                args2[0]= itoa(NO_OPERATION);
+                                args2[0]= noOp;
                                 args2[1] = errMessage;
                             }
                         }
                         else 
                         {
                             argsCount = 2;
-                            args2[0]= itoa(NO_OPERATION);
+                            args2[0]= noOp;
                             args2[1] = "Not valid args.";
                         }
                         break;
                     case LOGOUT:
                             cout << "Logging out." << endl;
                             currentUserName = "";
-                            args2[0] = itoa(SERV_OK);
+                            args2[0] = servOk;
                             break;
                     case SND:
                             cout << "Sending the message." << endl;
@@ -205,14 +208,14 @@ bool ServerWorker::MainLoop()
                                     if (mesId == 0) 
                                     {
                                         argsCount = 2;
-                                        args2[0]= itoa(NO_OPERATION);
+                                        args2[0]= noOp;
                                         args2[1] =  "Error while sending the message ["+errMessage+"]";
                                     }
                                     else 
                                     {
                                         m->body = "";
                                         argsCount = 2;
-                                        args2[0] = itoa(SERV_OK);
+                                        args2[0] = servOk;
                                         args2[1] = m->Serialize();
                                     }
                                 }
@@ -227,12 +230,12 @@ bool ServerWorker::MainLoop()
                                     argsCount = 2;
                                     if (errMessage.size() == 0)
                                     {
-                                        args2[0]= itoa(SERV_OK);
+                                        args2[0]= servOk;
                                         args2[1] = currentUserName;
                                     }
                                     else
                                     {
-                                        args2[0] = itoa(NO_OPERATION);
+                                        args2[0] = noOp;
                                         args2[1] = errMessage;
                                     }
                                     currentUserName = "";
@@ -248,12 +251,12 @@ bool ServerWorker::MainLoop()
                                         argsCount = 2;
                                         if (errMessage.size() == 0)
                                         {
-                                            args2[0] = itoa(SERV_OK);
+                                            args2[0] = servOk;
                                             args2[1] = "";
                                         }
                                         else
                                         {
-                                            args2[0] = itoa(NO_OPERATION);
+                                            args2[0] = noOp;
                                             args2[1] = errMessage;
                                         }
                                 } 
@@ -272,7 +275,7 @@ bool ServerWorker::MainLoop()
                                         argsCount = 2;
                                         if (errMessage.size() == 0)
                                         {
-                                            args2[0] = itoa(SERV_OK);
+                                            args2[0] = servOk;
                                             if (mesCount > 0)
                                             {
                                                 argsCount= mesCount + 1;
@@ -282,7 +285,7 @@ bool ServerWorker::MainLoop()
                                         }
                                         else
                                         {
-                                            args2[0] = itoa(NO_OPERATION);
+                                            args2[0] = noOp;
                                             args2[1] = errMessage;
                                         }
                                     }
@@ -301,7 +304,7 @@ bool ServerWorker::MainLoop()
                                         argsCount = 2;
                                         if (errMessage.size() == 0)
                                         {
-                                            args2[0] = itoa(SERV_OK);
+                                            args2[0] = servOk;
                                             if (mesCount > 0)
                                             {
                                                 argsCount= mesCount + 1;
@@ -311,7 +314,7 @@ bool ServerWorker::MainLoop()
                                         }
                                         else
                                         {
-                                            args2[0] = itoa(NO_OPERATION);
+                                            args2[0] = noOp;
                                             args2[1] = errMessage;
                                         }
                                     }
@@ -328,11 +331,11 @@ bool ServerWorker::MainLoop()
                                         argsCount = 2;
                                         if (errMessage.size() == 0)
                                         {
-                                            args2[0] = itoa(SERV_OK);
+                                            args2[0] = servOk;
                                         }
                                         else
                                         {
-                                            args2[0] = itoa(NO_OPERATION);
+                                            args2[0] = noOp;
                                             args2[1] = errMessage;
                                         }
                                     }
@@ -349,11 +352,11 @@ bool ServerWorker::MainLoop()
                                         argsCount = 2;
                                         if (errMessage.size() == 0)
                                         {
-                                            args2[0] = itoa(SERV_OK);
+                                            args2[0] = servOk; 
                                         }
                                         else
                                         {
-                                            args2[0] = itoa(NO_OPERATION);
+                                            args2[0] = noOp;
                                             args2[1] = errMessage;
                                         }
                                     }
@@ -363,9 +366,7 @@ bool ServerWorker::MainLoop()
                         cout << "Unknown state: " << State << endl;
                         break;
             }
-            SendTo(Serialize(ANSWER, argsCount, args2).c_str());
-            if (args!=NULL)
-                delete[] args;        
+            SendTo(Serialize(ANSWER, argsCount, args2).c_str());       
         }                
     }
     if (args!=NULL)
@@ -389,14 +390,16 @@ void ServerWorker::CloseSem(const string& name)
         sem_post(sem); 
 }
 
-string ServerWorker::GetPasswFilePth(const string& username) {
+string ServerWorker::GetPasswFilePth(const string& username) 
+{
     string pth = USERS_FOLDER;
     pth += username;
     pth += PASSW_FILE;
     return pth;
 }
 
-string ServerWorker::GetMessageFilePth(const string& username) {
+string ServerWorker::GetMessageFilePth(const string& username) 
+{
     string pth = USERS_FOLDER;
     pth += username;
     pth += MESSAGE_FILE;
@@ -416,74 +419,78 @@ bool ServerWorker::CheckUser(const string& name)
     return pass2.size()>0;
 }
 
-string ServerWorker::RegisterNewUser(const string &uname, const string &passw, bool &res) {
+string ServerWorker::RegisterNewUser(const string &uname, const string &passw, bool &res) 
+{
     int stat;
-    string mes;
     res = false;
-    if (uname.length() > 0 && passw.length() > 0 ) {
+    if (uname.length() > 0 && passw.length() > 0 ) 
+    {
 
         ifstream fin(GetPasswFilePth(uname).c_str());
-        if (!fin.good()) {
-            string pth = "./users/";
-            mkdir(pth.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-            pth += uname;
-
-            stat = mkdir(pth.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-            if (stat == 0) {
-                printf("Dir %s created successfully.\n", uname.c_str());
-                pth += PASSW_FILE;
-                ofstream out(pth.c_str());
-                if (out.good()) {
-                    out << passw;
-                    out.close();
-                    res = true;
-                    ofstream mFile(GetMessageFilePth(uname).c_str());
-                    mFile.close();
-                } else {
-                    printf("ERROR: Password is not saved.\n");
-                    mes.append("Internal server issue. Please, try again.\n");
-                }
-            } else {
-                printf("ERROR: Failed to create dir. ErrCode = %d\n", stat);
-                mes.append("Internal server issue. Please, try again.\n");
-            }
-        } else {
+        if (fin.good()) 
+        {
             printf("ERROR: User already exists.\n");
-            mes.append("Username is already used by another user. Please, choose other option for username.\n");
-        }
+            return "Username is already used by another user. Please, choose other option for username.\n";
+        } 
+        string pth = "./users/";
+        mkdir(pth.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        pth += uname;
+
+        stat = mkdir(pth.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if (stat != 0) 
+        {
+            printf("ERROR: Failed to create dir. ErrCode = %d\n", stat);
+            return "Internal server issue. Please, try again.\n";
+        } 
+        printf("Dir %s created successfully.\n", uname.c_str());
+        pth += PASSW_FILE;
+        ofstream out(pth.c_str());
+        if (!out.good()) 
+        {
+            printf("ERROR: Password is not saved.\n");
+            return "ERROR: Password is not saved.\n";
+        } 
+        out << passw;
+        out.close();
+        res = true;
+        ofstream mFile(GetMessageFilePth(uname).c_str());
+        mFile.close();
     }
-    return mes;
+    return "";
 }
 
-string ServerWorker::LoginNewUser(const string &uname, const string &passw, bool &res) {
-    string username = "";
-    string mes;
+string ServerWorker::LoginNewUser(const string &uname, const string &passw, bool &res) 
+{
     res = false;
-    if (uname.length() > 0 && passw.length() > 0 ) {
+    if (uname.length() > 0 && passw.length() > 0 ) 
+    {
         string pass2;
         string pth = GetPasswFilePth(uname);
         OpenSem(uname);
         ifstream fin(pth.c_str());
-        if (fin.good()) {
-            fin >> pass2;
-            if (pass2.compare(passw) == 0) {
-                res = true;
-                printf("Successfully logged in! User: %s\n", uname.c_str());
-            } else {
-                printf("ERROR: Password is not correct or there is no access to the pass. path = \"%s\"", pth.c_str());
-                mes.append("Internal server issue. Please, try again.\n");
-            }
-        } else {
+        if (!fin.good()) 
+        {
             printf("ERROR: Could not load file %s.\n", pth.c_str());
-            mes.append("Internal server issue. Please, try again.\n");
-        }
+            return "Internal server issue. Please, try again.\n";
+            
+            
+        } 
+        fin >> pass2;
+        if (pass2.compare(passw) != 0) 
+        {
+            printf("ERROR: Password is not correct or there is no access to the pass. path = \"%s\"", pth.c_str());
+            return "Internal server issue. Please, try again.\n";
+        } 
+        res = true;
+        printf("Successfully logged in! User: %s\n", uname.c_str());
         fin.close();
         CloseSem(uname);
     }
-    return mes;
+    return "";
 }
 
-string ServerWorker::DeleteUser(const string& username) {
+string ServerWorker::DeleteUser(const string& username) 
+{
     string buf;
     time_t seconds = time(NULL);
     tm* timeinfo = localtime(&seconds);
@@ -492,7 +499,8 @@ string ServerWorker::DeleteUser(const string& username) {
     int position = buf.find('\n');
     buf.replace(position, 1, "");
     position = buf.find(" ");
-    while (position != string::npos) {
+    while (position != string::npos) 
+    {
         buf.replace(position, 1, "_");
         position = buf.find(" ", position + 1);
     }
@@ -508,13 +516,15 @@ string ServerWorker::DeleteUser(const string& username) {
     return "";
 }
 
-unsigned long ServerWorker::AddMessage(Message* message, const string& username, const string& from, string& err) {
+unsigned long ServerWorker::AddMessage(Message* message, const string& username, const string& from, string& err) 
+{
     unsigned long lastId = LastMesID(username) + 1;
     bool isNameValid = false;
     isNameValid = CheckUser(username);
     if (isNameValid)
     {
-        if (lastId > 0 && message != NULL) {
+        if (lastId > 0 && message != NULL) 
+        {
             time_t seconds = time(NULL);
             tm* timeinfo = localtime(&seconds);
             message->date_time = asctime(timeinfo);
@@ -546,7 +556,7 @@ void ServerWorker::WriteToFile(const string& username, Message* message)
     CloseSem(username);
 }
 
-bool ServerWorker::WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode)//const Message** m, const unsigned long& size)
+bool ServerWorker::WriteMessages(const string& username, Message** m, const unsigned long& size, bool ioMode)
 {
     if (m!=NULL && size>=0)
     {
@@ -975,7 +985,6 @@ bool ServerWorker::ListenRecv(char* &MsgStr)
         char recvbuf[size];
         int res = recv(socket, recvbuf, size, 0);
         printf("String received: %s\n", recvbuf);
-        //printf("Received %d symbols!\n", res);
         if (res > 0) 
         {
             int count = 0;
