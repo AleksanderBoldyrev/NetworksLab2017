@@ -85,6 +85,8 @@ bool ServerWorker::MainLoop()
 	string MsgStr;
 	string currentUserName;
 	string errMessage;
+	string servOk = std::to_string(SERV_OK);
+	string noOp = std::to_string(NO_OPERATION);
 	int mesId;
 	bool RegisterState = false, LoginState = false;
 	unsigned short numarg;
@@ -104,10 +106,10 @@ bool ServerWorker::MainLoop()
 			switch (State)
 			{
 			case START:
-				args2[0] = itoa(SERV_OK, nullptr, 0);
+				args2[0] = servOk;
 				break;
 			case EXIT:
-				args2[0] = itoa(SERV_OK, nullptr, 0);
+				args2[0] = servOk;
 				printf("Client with ID: %d is disconnect!\n", socket);
 				break;
 			case REG:
@@ -116,19 +118,19 @@ bool ServerWorker::MainLoop()
 					errMessage = RegisterNewUser(args[0], args[1], RegisterState);
 					if (RegisterState)
 					{
-						args2[0] = itoa(SERV_OK, nullptr, 0);
+						args2[0] = servOk;
 					}
 					else
 					{
 						argsCount = 2;
-						args2[0] = itoa(NO_OPERATION, nullptr, 0);
+						args2[0] = noOp;
 						args2[1] = errMessage;
 					}
 				}
 				else
 				{
 					argsCount = 2;
-					args2[0] = itoa(NO_OPERATION, nullptr, 0);
+					args2[0] = noOp;
 					args2[1] = "Not valid args.";
 				}
 				break;
@@ -138,27 +140,27 @@ bool ServerWorker::MainLoop()
 					errMessage = LoginNewUser(args[0], args[1], LoginState);
 					if (LoginState)
 					{
-						args2[0] = itoa(SERV_OK, nullptr, 0);
+						args2[0] = servOk;
 						currentUserName = args[0];
 					}
 					else
 					{
 						argsCount = 2;
-						args2[0] = itoa(NO_OPERATION, nullptr, 0);
+						args2[0] = noOp;
 						args2[1] = errMessage;
 					}
 				}
 				else
 				{
 					argsCount = 2;
-					args2[0] = itoa(NO_OPERATION, nullptr, 0);
+					args2[0] = noOp;
 					args2[1] = "Not valid args.";
 				}
 				break;
 			case LOGOUT:
 				cout << "Logging out." << endl;
 				currentUserName = "";
-				args2[0] = itoa(SERV_OK, nullptr, 0);
+				args2[0] = servOk;
 				break;
 			case SND:
 				cout << "Sending the message." << endl;
@@ -173,14 +175,14 @@ bool ServerWorker::MainLoop()
 						if (mesId == 0)
 						{
 							argsCount = 2;
-							args2[0] = itoa(NO_OPERATION, nullptr, 0);
+							args2[0] = noOp;
 							args2[1] = "Error while sending the message [" + errMessage + "]";
 						}
 						else
 						{
 							m->body = "";
 							argsCount = 2;
-							args2[0] = itoa(SERV_OK, nullptr, 0);
+							args2[0] = servOk;
 							args2[1] = m->Serialize();
 						}
 					}
@@ -195,12 +197,12 @@ bool ServerWorker::MainLoop()
 					argsCount = 2;
 					if (errMessage.size() == 0)
 					{
-						args2[0] = itoa(SERV_OK, nullptr, 0);
+						args2[0] = servOk;
 						args2[1] = currentUserName;
 					}
 					else
 					{
-						args2[0] = itoa(NO_OPERATION, nullptr, 0);
+						args2[0] = noOp;
 						args2[1] = errMessage;
 					}
 					currentUserName = "";
@@ -216,12 +218,12 @@ bool ServerWorker::MainLoop()
 						argsCount = 2;
 						if (errMessage.size() == 0)
 						{
-							args2[0] = itoa(SERV_OK, nullptr, 0);
+							args2[0] = servOk;
 							args2[1] = "";
 						}
 						else
 						{
-							args2[0] = itoa(NO_OPERATION, nullptr, 0);
+							args2[0] = noOp;
 							args2[1] = errMessage;
 						}
 					}
@@ -240,7 +242,7 @@ bool ServerWorker::MainLoop()
 						argsCount = 2;
 						if (errMessage.size() == 0)
 						{
-							args2[0] = itoa(SERV_OK, nullptr, 0);
+							args2[0] = servOk;
 							if (mesCount > 0)
 							{
 								argsCount = mesCount + 1;
@@ -250,7 +252,7 @@ bool ServerWorker::MainLoop()
 						}
 						else
 						{
-							args2[0] = itoa(NO_OPERATION, nullptr, 0);
+							args2[0] = noOp;
 							args2[1] = errMessage;
 						}
 					}
@@ -269,7 +271,7 @@ bool ServerWorker::MainLoop()
 						argsCount = 2;
 						if (errMessage.size() == 0)
 						{
-							args2[0] = itoa(SERV_OK, nullptr, 0);
+							args2[0] = servOk;
 							if (mesCount > 0)
 							{
 								argsCount = mesCount + 1;
@@ -279,7 +281,7 @@ bool ServerWorker::MainLoop()
 						}
 						else
 						{
-							args2[0] = itoa(NO_OPERATION, nullptr, 0);
+							args2[0] = noOp;
 							args2[1] = errMessage;
 						}
 					}
@@ -296,11 +298,11 @@ bool ServerWorker::MainLoop()
 						argsCount = 2;
 						if (errMessage.size() == 0)
 						{
-							args2[0] = itoa(SERV_OK, nullptr, 0);
+							args2[0] = servOk;
 						}
 						else
 						{
-							args2[0] = itoa(NO_OPERATION, nullptr, 0);
+							args2[0] = noOp;
 							args2[1] = errMessage;
 						}
 					}
@@ -317,11 +319,11 @@ bool ServerWorker::MainLoop()
 						argsCount = 2;
 						if (errMessage.size() == 0)
 						{
-							args2[0] = itoa(SERV_OK, nullptr, 0);
+							args2[0] = servOk;
 						}
 						else
 						{
-							args2[0] = itoa(NO_OPERATION, nullptr, 0);
+							args2[0] = noOp;
 							args2[1] = errMessage;
 						}
 					}
