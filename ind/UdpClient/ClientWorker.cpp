@@ -859,7 +859,7 @@ STATE ClientWorker::ParseOpCode(const string& buf)
 
 
 
-bool ServerWorker::ListenRecv(char* &MsgStr) 
+/*bool ServerWorker::ListenRecv(char* &MsgStr) 
 {
     char c[BUFSIZE];
     unsigned int size = 0;
@@ -918,7 +918,7 @@ void ServerWorker::SendTo(const char* message) {
     }
     else 
         printf("Failed to send. Received NULL message.");
-}
+}*/
 
 
 
@@ -989,7 +989,7 @@ bool ClientWorker::ListenRecv(int socket, std::string& MsgStr) {
     }
     return true;
 }*/
-void ClientWorker::SendTo(int socket, const char* temp) 
+void ClientWorker::SendTo(int socket, const string& temp) 
 {
     if (temp.size() > 0) 
     {
@@ -1012,7 +1012,8 @@ void ClientWorker::SendTo(int socket, const char* temp)
     }
 }
 
-bool ClientWorker::ListenRecv(int socket, std::char* &MsgStr) {
+bool ClientWorker::ListenRecv(int socket, std::string& MsgStr) 
+{
     char buffer[UDP_DG_LEN];
     size_t len = TECH_DG_SIZE;
     size_t res = 0;

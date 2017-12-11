@@ -21,8 +21,9 @@
 class ThreadData
 {
 public:
-	std::string* rBuf = nullptr;
-	std::string* sBuf = nullptr;
+	char* rBuf = nullptr;
+	char* sBuf = nullptr;
+	char* tempRBuf = nullptr;
 	std::wstring sMutexName;
 	std::wstring rMutexName;
 	sockaddr_in address;
@@ -31,14 +32,10 @@ public:
 
 	unsigned long lastPacketNumSend = 0;
 	unsigned long lastPacketNumRecv = 0;
-	std::string tempRBuf;
 
 	~ThreadData()
 	{
-		if (rBuf != nullptr)
-			delete rBuf;
-		if (sBuf != nullptr)
-			delete sBuf;
+
 	}
 };
 

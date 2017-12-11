@@ -77,18 +77,6 @@ const short MSTATE_NORMAL = 0;     // position of normal value
 const short MSTATE_DELETED = 1;    // position of deleted value
 const short MSTATE_UNREAD = 2;     // position of unread value
 
-static string intToStr(const unsigned int& val)
-{
-	stringstream sss;
-	sss << val;
-	string sk = sss.str();
-	while (sk.size() < TECH_DG_SIZE)
-	{
-		sk.insert(sk.begin(), '0');
-	}
-	return sk;
-}
-
 class Message
 {
 public:

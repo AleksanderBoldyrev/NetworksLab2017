@@ -82,7 +82,7 @@ bool Message::Deserialize(const string& input)
 bool ServerWorker::MainLoop()
 {
 	STATE State = NO_OPERATION;
-	string MsgStr;
+	char* MsgStr = nullptr;
 	string currentUserName;
 	string errMessage;
 	string servOk = std::to_string(SERV_OK);
@@ -933,18 +933,20 @@ bool ServerWorker::DeleteOneMes(const string& username, const unsigned long& id)
 	return res;
 }
 
-bool ServerWorker::ListenInBuf(std::string& MsgStr)
+bool ServerWorker::ListenInBuf(char* &MsgStr)
 {
+	bool isEmp = true;
 	if (td != nullptr)
 	{
-		MsgStr.clear();
-		while (MsgStr.length() == 0)
+		if (MsgStr != nullptr) delete[] MsgStr;
+		while (isEmp)
 		{
 			HANDLE m;
 			if (LockMutex(td->rMutexName, m) && td->rBuf != nullptr)
 			{
 				MsgStr += *td->rBuf;
-				td->rBuf->clear();
+				isEmp = false;
+				delete[] td->rBuf;
 			}
 			UnlockMutex(m);
 			Sleep(100);
@@ -955,7 +957,7 @@ bool ServerWorker::ListenInBuf(std::string& MsgStr)
 		return false;
 }
 
-void ServerWorker::SendTo(const string& message) {
+void ServerWorker::SendTo(const char* message) {
 	if (td != nullptr)
 	{
 		HANDLE m;
@@ -964,7 +966,12 @@ void ServerWorker::SendTo(const string& message) {
 		{
 			if (LockMutex(td->sMutexName, m) && td->sBuf != nullptr)
 			{
-				*td->sBuf = message;
+				td->sBuf = new char[strlen(message)];
+				for (int i = 0; i < strlen(message); i++)
+				{
+					td->sBuf[i] = message[i];
+				}
+
 				cout << "ServerWorker - " << message << endl;
 				act = true;
 			}

@@ -144,7 +144,7 @@ unsigned int CUdpServer::CheckClient(const sockaddr_in& saddr, ThreadData* &clie
 
 	clients[cSize - 1].address = saddr;
 
-	clients[cSize - 1].rBuf = new string();
+	clients[cSize - 1].rBuf = nullptr;
 
 	stringstream ss;
 	ss << inet_ntoa(saddr.sin_addr) << "_" << saddr.sin_port << "_read";
@@ -153,8 +153,8 @@ unsigned int CUdpServer::CheckClient(const sockaddr_in& saddr, ThreadData* &clie
 	ss << inet_ntoa(saddr.sin_addr) << "_" << saddr.sin_port << "_write";
 	clients[cSize - 1].sMutexName = converter.from_bytes(ss.str().c_str());
 
-	clients[cSize - 1].sBuf = new string();
-	clients[cSize - 1].rBuf = new string();
+	clients[cSize - 1].sBuf = nullptr;
+	clients[cSize - 1].rBuf = nullptr;
 
 	DWORD t;
 	clients[cSize - 1].tHandle = CreateThread(0, 0, ListenThread, (void*)&clients[cSize - 1], 0, &t);
@@ -212,7 +212,7 @@ void CUdpServer::ProcessInput(const SOCKET& s, ThreadData* &clients, unsigned in
 							{
 								// read data
 								if (clients[pos].rBuf != nullptr)
-									clients[pos].rBuf->append(clients[pos].tempRBuf);
+									strcat(clients[pos].rBuf, clients[pos].tempRBuf);
 								clients[pos].address = from;
 								act = true;
 								clients[pos].tempRBuf = "";
@@ -259,29 +259,31 @@ void CUdpServer::ProcessOutput(const SOCKET& s, ThreadData* clients, const unsig
 					//read data from sBuf;
 					if (clients[i].sBuf != nullptr)
 					{
-						string ss = *clients[i].sBuf;
+						char* ss = clients[i].sBuf;
 						
 						unsigned int curPos = 0;
 						// Разбиваем ss на подстроки длины количества символов UDP пакета и каждый раз отправляем их как новые пакеты.
 
-						if (ss.size() > 0)
+						if (strlen(ss) > 0)
 						{
 							ss += EOF_SYM;
-							clients[i].sBuf->clear();
+							delete[] clients[i].sBuf;
 							int tolen = sizeof(clients[i].address);
-							stringstream sndBuf;
-							while (curPos < ss.length())
+							char* sndBuf;
+							const int tlen = strlen(ss);
+							while (curPos < tlen)
 							{
-								sndBuf.str(string());
+								delete[] sndBuf;
 								int num = ++clients[i].lastPacketNumSend;
-								sndBuf << intToStr(num);
-								int tLen = min(ss.length()-curPos, UDP_DG_LEN - TECH_DG_SIZE);
-								sndBuf << ss.substr(curPos, tLen);
+								itoa(num, sndBuf, 10);
+								int tLen = min(tlen -curPos, UDP_DG_LEN - TECH_DG_SIZE);
+								char* subbuff = new char[tlen];
+								memcpy(subbuff, &ss, tlen - 1);
 								curPos += tLen;
-								cout << "Sending to client: " << sndBuf.str().c_str() << endl;
-								int count = sendto(s, sndBuf.str().c_str(), sndBuf.str().length(), 0, (sockaddr*)&clients[i].address, tolen);
-								if (count != sndBuf.str().length())
-									cout << "Send data mismatch: send " << count << ", have " << sndBuf.str().length() << endl;
+								cout << "Sending to client: " << sndBuf << endl;
+								int count = sendto(s, sndBuf, strlen(sndBuf), 0, (sockaddr*)&clients[i].address, tolen);
+								if (count != strlen(sndBuf))
+									cout << "Send data mismatch: send " << count << ", have " << strlen(sndBuf) << endl;
 								act = true;
 							}
 						}

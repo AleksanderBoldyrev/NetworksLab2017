@@ -38,7 +38,7 @@ public:
 	void Init(ThreadData* data);
 	bool MainLoop();
 private:
-	void SendTo(const string& message);
+	void SendTo(const char* message);
 	ThreadData* td;
 	string GetPasswFilePth(const string& username);
 	string GetMessageFilePth(const string& username);
@@ -62,14 +62,12 @@ private:
 	string Serialize(STATE opcode, unsigned short numarg, const string * ss);
 	STATE Parse(const string& input, unsigned short& numarg, string* &args);
 
-	void ReplaceBuf(string& buf, const string& s);
-
 	void WriteToFile(const string& username, Message* message);
 
 	void OpenSem(const string& name);
 	void CloseSem(const string& name);
 
-	bool ListenInBuf(std::string& MsgStr);
+	bool ListenInBuf(char* &MsgStr);
 
 	static bool LockMutex(HANDLE& m);
 	static void UnlockMutex(HANDLE& m);
