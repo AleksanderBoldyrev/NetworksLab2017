@@ -47,8 +47,11 @@
 
 #include "API.h"
 
-#define DELIM ':'
+const char DELIM = ':';
 
+static bool dr = false;
+static string uname;
+static int mesId = -1;
 
 using namespace std;
 
@@ -66,6 +69,7 @@ public:
 	string Serialize(unsigned int opcode, unsigned short numarg, const string* ss);
 	STATE Parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);
+        void processRes(short& state, const string& buf, Message& m, const string& mes);
 private:
 	void Run(string host, unsigned short port);
 	void ListenLoop(string host, unsigned short port);

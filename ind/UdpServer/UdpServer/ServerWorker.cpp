@@ -334,8 +334,6 @@ bool ServerWorker::MainLoop()
 				break;
 			}
 			SendTo(Serialize(ANSWER, argsCount, args2).c_str());
-			if (args != NULL)
-				delete[] args;
 		}
 	}
 	if (args != NULL)
@@ -392,6 +390,9 @@ string ServerWorker::RegisterNewUser(const string &uname, const string &passw, b
 
 		ifstream fin(GetPasswFilePth(uname).c_str());
 		if (!fin.good()) {
+			//char current_work_dir[FILENAME_MAX];
+			//_getcwd(current_work_dir, sizeof(current_work_dir));
+			//string pth = strcat(current_work_dir,"/users/");
 			string pth = "./users/";
 			_mkdir(pth.c_str());
 			pth += uname;
@@ -594,7 +595,7 @@ string ServerWorker::ShowUnreadMes(const string& username, unsigned long &cc, st
 	}
 
 	if (unread == 0)
-		return "Error while showing unread the messages. No messages found.";
+		return "Error while showing unread messages. No messages found.";
 	return "";
 }
 
@@ -623,7 +624,7 @@ string ServerWorker::ShowAllMes(const string& username, unsigned long &size, str
 		}
 	}
 	else
-		return "Error while showing unread the messages. No messages found.";
+		return "Error while showing all messages. No messages found.";
 	return "";
 }
 

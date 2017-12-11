@@ -6,14 +6,14 @@
 
 using namespace std;
 
-#define DELIM_PARSE '|'
-#define DELIM_SERIALIZE '^'
-#define EOF_SYM (char)2
+const char DELIM_PARSE =  '|';
+const char DELIM_SERIALIZE =  '^';
+const char EOF_SYM = (char)2;
 
-#define UDP_DG_LEN      32     // UNICODE symbol count in one packet.
-#define TECH_DG_SIZE    10     // Char count, in which the length of the packet and it's number are secured.
+const short UDP_DG_LEN = 32;     // UNICODE symbol count in one packet.
+const short TECH_DG_SIZE = 10;     // Char count, in which the length of the packet and it's number are secured.
 
-#define OPENT "Enter your option: "
+const string OPENT = "Enter your option: ";
 
 static const int API_SIZE = 18;
 
@@ -61,19 +61,19 @@ enum STATE
 	INSYS
 };
 
-#define MESSAGE_FIELDS_COUNT 6
+const short MESSAGE_FIELDS_COUNT = 6;
 
-#define MES_ID          "<id>"
-#define MES_ADDR        "<from>"
-#define MES_DATE_TIME   "<date/time>"
-#define MES_LEN         "<len>"
-#define MES_STATE       "<state>"             // message read/unread/deleted
+const string MES_ID = "<id>";
+const string MES_ADDR = "<from>";
+const string MES_DATE_TIME = "<date/time>";
+const string MES_LEN = "<len>";
+const string MES_STATE = "<state>";             // message read/unread/deleted
 
 static const string MESSAGE_STATES[3] = { "Normal", "Deleted", "Unread" };
 
-#define MSTATE_NORMAL 0     // position of normal value
-#define MSTATE_DELETED 1    // position of deleted value
-#define MSTATE_UNREAD 2     // position of unread value
+const short MSTATE_NORMAL = 0;     // position of normal value
+const short MSTATE_DELETED = 1;    // position of deleted value
+const short MSTATE_UNREAD = 2;     // position of unread value
 
 static string intToStr(const unsigned int& val)
 {

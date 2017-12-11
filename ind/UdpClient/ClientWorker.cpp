@@ -80,20 +80,16 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 	int error = 0;
 	state = START;
 	string buf;
-	unsigned int answerCode;
-	unsigned short numArgCount;
-	string* args = NULL;
-
+	
 	string log;
 	string pass;
-	bool dr = false;
+
 	bool df = false;
 	bool ds = false;
 
-	string uname;
 	Message m;
 	string mes;
-	int mesId = -1;
+
 
 	while (1)
 	{
@@ -107,40 +103,10 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 		case START:
 			SendTo(sockfd, Serialize(START, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			if (answerCode != NO_OPERATION)
-			{
-				if (numArgCount > 0 && args != NULL)
-				{
-					if (atoi(args[0].c_str()) == SERV_OK)
-					{
-						cout << "Connected to server successfully." << endl;
-						state = INIT;
-						getchar();
-					}
-					else
-					{
-						cout << "Smth went wrong [stcmp]" << endl;
-						getchar();
-					}
-				}
-				else
-				{
-					cout << "Smth went wrong [numarg || args]" << endl;
-					getchar();
-				}
-			}
-			else
-			{
-				cout << "Smth went wrong [ansCode]" << endl;
-				getchar();
-			}
 			break;
 		case NO_OPERATION:
 			SendTo(sockfd, Serialize(NO_OPERATION, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			cout << "Enter a valid operation number.\n";
 			break;
 		case ANSWER:
 			cout << "Got the ANSWER message from server." << endl;
@@ -170,17 +136,13 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					getchar();
 				}
 			}
+                        continue;
 			break;
 		case EXIT:
 			SendTo(sockfd, Serialize(EXIT, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			return;
 			break;
 		case REG:
-			dr = false;
-			while (!dr)
-			{
 				cout << "You are about to sign up. Enter the <username>: ";
 				cin >> log;
 				cout << "Enter the <password>: ";
@@ -193,47 +155,15 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					SendTo(sockfd, Serialize(REG, 2, bufs));
 					delete[] bufs;
 					ListenRecv(sockfd, buf);
-					answerCode = Parse(buf, numArgCount, args);
-					if (answerCode != NO_OPERATION)
-					{
-						if (numArgCount > 0 && args != NULL)
-						{
-							if (atoi(args[0].c_str()) == SERV_OK)
-							{
-								dr = true;
-								state = INIT;
-								cout << "User created successfully. Press any key.\n" << endl;
-								getchar();
-							}
-							else
-							{
-								if (numArgCount > 1)
-								{
-									cout << "ERROR: while signing up" << args[1] << "]\n";
-								}
-								else cout << "Error while signing up.";
-							}
-						}
-					}
-					else
-					{
-						if (numArgCount > 0 && args != NULL)
-							cout << "ERROR: while creating user err[" << args[0] << "]\n";
-						else cout << "Unknown error.\n";
-						getchar();
-					}
 				}
 				else
 				{
 					printf("Login or password missing.\n");
 					getchar();
 				}
-			}
 			break;
 		case LOG:
 			dr = false;
-			while (!dr)
-			{
 				cout << "You are about to sign in. Enter the <username>: ";
 				cin >> log;
 				cout << "Enter the <password>: ";
@@ -246,42 +176,12 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					SendTo(sockfd, Serialize(LOG, 2, bufs));
 					delete[] bufs;
 					ListenRecv(sockfd, buf);
-					answerCode = Parse(buf, numArgCount, args);
-					if (answerCode != NO_OPERATION)
-					{
-						if (numArgCount > 0 && args != NULL)
-						{
-							if (atoi(args[0].c_str()) == SERV_OK)
-							{
-								dr = true;
-								state = INSYS;
-								cout << "User signed in successfully. Press any key.\n" << endl;
-								getchar();
-							}
-							else
-							{
-								if (numArgCount > 1)
-								{
-									cout << "ERROR: while signing in" << args[1] << "]\n";
-								}
-								else cout << "Error while signing in.";
-							}
-						}
-					}
-					else
-					{
-						if (numArgCount > 0 && args != NULL)
-							cout << "ERROR: while logging in err[" << args[0] << "]\n";
-						else cout << "Unknown error.\n";
-						getchar();
-					}
 				}
 				else
 				{
 					printf("Login or password missing.\n");
 					getchar();
 				}
-			}
 			break;
 		case INSYS:
 			ds = false;
@@ -318,7 +218,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					state = SH_EX;
 					break;
 				case 9:
-					state = DEL_MES;
+					state = DEL_MSG;
 					break;
 				case 10:
 					state = RSND;
@@ -329,19 +229,12 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					getchar();
 				}
 			}
+                        continue;
 			break;
 		case LOGOUT:
 			cout << "Logging out.\n" << endl;
 			SendTo(sockfd, Serialize(LOGOUT, 0, NULL));
 			ListenRecv(sockfd, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			if (atoi(args[0].c_str()) == SERV_OK)
-			{
-				cout << "Log out successfully. Press any key." << endl;
-				state = INIT;
-			}
-			else cout << "Error while logging out. Press any key." << endl;
-			getchar();
 			break;
 		case SND:
 			cout << "Sending the message. Enter the username of the user you would like to send: " << endl;
@@ -358,6 +251,196 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				SendTo(sockfd, Serialize(SND, 2, bufs));
 				delete[] bufs;
 				ListenRecv(sockfd, buf);
+			}
+			break;
+		case DEL_US:
+			cout << "Deleting user." << endl;
+			SendTo(sockfd, Serialize(DEL_US, 0, NULL));
+			ListenRecv(sockfd, buf);
+			break;
+		case DEL_MSG:
+			cout << "Deleting message." << endl;
+			cout << "Enter the message ID which you would like to delete:" << endl;
+			cin >> mesId;
+			if (mesId > 0)
+			{
+				stringstream sss;
+				string bufs[1];
+				sss << mesId;
+				bufs[0] = sss.str();
+				SendTo(sockfd, Serialize(DEL_MSG, 1, bufs));
+				ListenRecv(sockfd, buf);
+			}
+			break;
+		case SH_UNR:
+			cout << "Showing unread messages." << endl;
+			SendTo(sockfd, Serialize(SH_UNR, 0, NULL));
+			ListenRecv(sockfd, buf);
+			break;
+		case SH_ALL:
+			cout << "Showing all messages." << endl;
+			SendTo(sockfd, Serialize(SH_ALL, 0, NULL));
+			ListenRecv(sockfd, buf);
+			break;
+		case SH_EX:
+			cout << "Showing the exact message." << endl;
+			cout << "Enter the message ID which you would like to get: " << endl;
+			cin >> mesId;
+			if (mesId > 0)
+			{
+				stringstream sss;
+				string bufs[1];
+				sss << mesId;
+				bufs[0] = sss.str();
+				SendTo(sockfd, Serialize(SH_EX, 1, bufs));
+				ListenRecv(sockfd, buf);
+			}
+			break;
+		case RSND:
+			cout << "Resending the exact message." << endl;
+			cout << "Resending the message. Enter the username of the user you would like to send: " << endl;
+			cin >> uname;
+			cout << "Enter the message ID to resend: " << endl;
+			cin >> mesId;
+			if (uname.size() > 0)
+			{
+				stringstream sss;
+				string bufs[2];
+				sss << mesId;
+				bufs[0] = sss.str();
+				bufs[1] = uname;
+				SendTo(sockfd, Serialize(RSND, 2, bufs));
+				ListenRecv(sockfd, buf);
+			}
+			break;
+		default:
+			printf("Smth went wrong [non existant state].");
+			getchar();
+		}
+                processRes(state, buf, m, mes);
+	}
+}
+
+void ClientWorker::processRes(short& state, const string& buf, Message& m, const string& mes)
+{
+    unsigned int answerCode;
+    unsigned short numArgCount;
+    string* args = NULL;
+        
+    switch (state)
+		{
+		case START:
+			answerCode = Parse(buf, numArgCount, args);
+			if (answerCode != NO_OPERATION)
+			{
+				if (numArgCount > 0 && args != NULL)
+				{
+					if (atoi(args[0].c_str()) == SERV_OK)
+					{
+						cout << "Connected to server successfully." << endl;
+						state = INIT;
+						getchar();
+					}
+					else
+					{
+						cout << "Smth went wrong [stcmp]" << endl;
+						getchar();
+					}
+				}
+				else
+				{
+					cout << "Smth went wrong [numarg || args]" << endl;
+					getchar();
+				}
+			}
+			else
+			{
+				cout << "Smth went wrong [ansCode]" << endl;
+				getchar();
+			}
+			break;
+		case NO_OPERATION:
+			answerCode = Parse(buf, numArgCount, args);
+			cout << "Enter a valid operation number.\n";
+			break;
+		case ANSWER:
+			cout << "Got the ANSWER message from server." << endl;
+			break;
+		case EXIT:
+			answerCode = Parse(buf, numArgCount, args);
+			return;
+			break;
+		case REG:
+					answerCode = Parse(buf, numArgCount, args);
+					if (answerCode != NO_OPERATION)
+					{
+						if (numArgCount > 0 && args != NULL)
+						{
+							if (atoi(args[0].c_str()) == SERV_OK)
+							{
+								state = INIT;
+								cout << "User created successfully. Press any key.\n" << endl;
+								getchar();
+							}
+							else
+							{
+								if (numArgCount > 1)
+								{
+									cout << "ERROR: while signing up" << args[1] << "]\n";
+								}
+								else cout << "Error while signing up.";
+							}
+						}
+					}
+					else
+					{
+						if (numArgCount > 0 && args != NULL)
+							cout << "ERROR: while creating user err[" << args[0] << "]\n";
+						else cout << "Unknown error.\n";
+						getchar();
+					}
+			break;
+		case LOG:
+					answerCode = Parse(buf, numArgCount, args);
+					if (answerCode != NO_OPERATION)
+					{
+						if (numArgCount > 0 && args != NULL)
+						{
+							if (atoi(args[0].c_str()) == SERV_OK)
+							{
+								state = INSYS;
+								cout << "User signed in successfully. Press any key.\n" << endl;
+								getchar();
+							}
+							else
+							{
+								if (numArgCount > 1)
+								{
+									cout << "ERROR: while signing in" << args[1] << "]\n";
+								}
+								else cout << "Error while signing in.";
+							}
+						}
+					}
+					else
+					{
+						if (numArgCount > 0 && args != NULL)
+							cout << "ERROR: while logging in err[" << args[0] << "]\n";
+						else cout << "Unknown error.\n";
+						getchar();
+					}
+			break;
+		case LOGOUT:
+			answerCode = Parse(buf, numArgCount, args);
+			if (atoi(args[0].c_str()) == SERV_OK)
+			{
+				cout << "Log out successfully. Press any key." << endl;
+				state = INIT;
+			}
+			else cout << "Error while logging out. Press any key." << endl;
+			getchar();
+			break;
+		case SND:
 				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != NO_OPERATION)
 				{
@@ -394,12 +477,8 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					state = INSYS;
 					getchar();
 				}
-			}
 			break;
 		case DEL_US:
-			cout << "Deleting user." << endl;
-			SendTo(sockfd, Serialize(DEL_US, 0, NULL));
-			ListenRecv(sockfd, buf);
 			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != NO_OPERATION)
 			{
@@ -432,18 +511,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 				getchar();
 			}
 			break;
-		case DEL_MES:
-			cout << "Deleting message." << endl;
-			cout << "Enter the message ID which you would like to delete:" << endl;
-			cin >> mesId;
-			if (mesId > 0)
-			{
-				stringstream sss;
-				string bufs[1];
-				sss << mesId;
-				bufs[0] = sss.str();
-				SendTo(sockfd, Serialize(DEL_MES, 1, bufs));
-				ListenRecv(sockfd, buf);
+		case DEL_MSG:
 				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != NO_OPERATION)
 				{
@@ -453,7 +521,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 						{
 							cout << "Message <" << mesId << "> deleted successfully." << endl;
 							cout << "\nPress any key." << endl;
-							state = INIT;
+							state = INSYS;
 							getchar();
 						}
 						else
@@ -475,12 +543,8 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					state = INSYS;
 					getchar();
 				}
-			}
 			break;
 		case SH_UNR:
-			cout << "Showing unread messages." << endl;
-			SendTo(sockfd, Serialize(SH_UNR, 0, NULL));
-			ListenRecv(sockfd, buf);
 			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != NO_OPERATION)
 			{
@@ -522,9 +586,6 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			}
 			break;
 		case SH_ALL:
-			cout << "Showing all messages." << endl;
-			SendTo(sockfd, Serialize(SH_ALL, 0, NULL));
-			ListenRecv(sockfd, buf);
 			answerCode = Parse(buf, numArgCount, args);
 			if (answerCode != NO_OPERATION)
 			{
@@ -566,17 +627,6 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			}
 			break;
 		case SH_EX:
-			cout << "Showing the exact message." << endl;
-			cout << "Enter the message ID which you would like to get: " << endl;
-			cin >> mesId;
-			if (mesId > 0)
-			{
-				stringstream sss;
-				string bufs[1];
-				sss << mesId;
-				bufs[0] = sss.str();
-				SendTo(sockfd, Serialize(SH_EX, 1, bufs));
-				ListenRecv(sockfd, buf);
 				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != NO_OPERATION)
 				{
@@ -613,23 +663,8 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					state = INSYS;
 					getchar();
 				}
-			}
 			break;
 		case RSND:
-			cout << "Resending the exact message." << endl;
-			cout << "Resending the message. Enter the username of the user you would like to send: " << endl;
-			cin >> uname;
-			cout << "Enter the message ID to resend: " << endl;
-			cin >> mesId;
-			if (uname.size() > 0)
-			{
-				stringstream sss;
-				string bufs[2];
-				sss << mesId;
-				bufs[0] = sss.str();
-				bufs[1] = uname;
-				SendTo(sockfd, Serialize(RSND, 2, bufs));
-				ListenRecv(sockfd, buf);
 				answerCode = Parse(buf, numArgCount, args);
 				if (answerCode != NO_OPERATION)
 				{
@@ -660,13 +695,11 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					else cout << "Unknown error.\n";
 					getchar();
 				}
-			}
 			break;
 		default:
 			printf("Smth went wrong [non existant state].");
 			getchar();
 		}
-	}
 }
 
 string ClientWorker::MessageToString(const Message& m)
