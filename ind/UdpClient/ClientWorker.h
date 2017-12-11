@@ -43,7 +43,6 @@
 #include <semaphore.h>
 #include <fcntl.h>
 #include <sys/file.h>
-//#include <sys/types.h>
 
 #include "API.h"
 
@@ -62,14 +61,14 @@ public:
 	~ClientWorker();
 
 	void StartThread(string* params);
-	void stopThread();
+	void StopThread();
 	static void* HandleThread(void* args);
 	void SendTo(int s, const string& message);
 	bool ListenRecv(int s, std::string& MsgStr);
 	string Serialize(unsigned int opcode, unsigned short numarg, const string* ss);
 	STATE Parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);
-        void processRes(short& state, const string& buf, Message& m, const string& mes);
+        void ProcessRes(short& state, const string& buf, Message& m, const string& mes);
 private:
 	void Run(string host, unsigned short port);
 	void ListenLoop(string host, unsigned short port);

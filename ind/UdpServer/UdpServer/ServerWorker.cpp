@@ -390,9 +390,6 @@ string ServerWorker::RegisterNewUser(const string &uname, const string &passw, b
 
 		ifstream fin(GetPasswFilePth(uname).c_str());
 		if (!fin.good()) {
-			//char current_work_dir[FILENAME_MAX];
-			//_getcwd(current_work_dir, sizeof(current_work_dir));
-			//string pth = strcat(current_work_dir,"/users/");
 			string pth = "./users/";
 			_mkdir(pth.c_str());
 			pth += uname;

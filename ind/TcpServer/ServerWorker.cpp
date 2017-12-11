@@ -769,6 +769,11 @@ unsigned long ServerWorker::LastMesID(const string& username)
     return res;
 }
 
+void ServerWorker::ReplaceBuf(string& buf, const string& s)
+{
+    buf.replace(0,string(s).size(), "");
+}
+
 Message** ServerWorker::ReadAllMes(const string& username, unsigned long& res)
 {
     Message** mes = NULL;
@@ -788,32 +793,32 @@ Message** ServerWorker::ReadAllMes(const string& username, unsigned long& res)
                     res++;
                     mes = (Message**)realloc(mes, res*sizeof(Message*));
                     mes[res-1] = new Message();
-                    buf.replace(0,string(MES_ID).size(), "");
+                    ReplaceBuf(buf, MES_ID);
                     mes[res-1][0].id = strtoul(buf.c_str(), NULL, 10);
                     printf("ID = %lu\n", mes[res-1][0].id);
                     state++;
                     break;
                 case 1: // user name
-                    buf.replace(0,string(MES_ADDR).size(), "");
+                    ReplaceBuf(buf, MES_ADDR);
                     mes[res-1][0].username = buf;
                     printf("USERNAME = %s\n", mes[res-1][0].username.c_str());
                     state++;
                     break;
                 case 2: // date_time
-                    buf.replace(0,string(MES_DATE_TIME).size(), "");
+                    ReplaceBuf(buf, MES_DATE_TIME);
                     mes[res-1][0].date_time.append(buf);
                     printf("DATE = %s\n", mes[res-1][0].date_time.c_str());
                     state++;
                     break;
                 case 3: // len
-                    buf.replace(0,string(MES_LEN).size(), "");
+                    ReplaceBuf(buf, MES_LEN);
                     mes[res-1][0].len = strtoul(buf.c_str(), NULL, 10);
                     size = mes[res-1][0].len;
                     printf("SIZE = %lu\n", mes[res-1][0].len);
                     state++;
                     break;
                 case 4: // state
-                    buf.replace(0,string(MES_STATE).size(), "");
+                    ReplaceBuf(buf, MES_STATE);
                     mes[res-1][0].state = strtoul(buf.c_str(), NULL, 10);
                     printf("STATE = %d\n", mes[res-1][0].state);
                     state++;
@@ -860,32 +865,32 @@ Message* ServerWorker::ReadOneMes(const string& username, const unsigned long& i
                         }
                     delete mes;
                     mes = new Message();
-                    buf.replace(0,string(MES_ID).size(), "");
+                    ReplaceBuf(buf, MES_ID);
                     mes->id = strtoul(buf.c_str(), NULL, 10);
                     printf("ID = %lu\n", mes->id);
                     state++;
                     break;
                 case 1: // user name
-                    buf.replace(0,string(MES_ADDR).size(), "");
+                    ReplaceBuf(buf, MES_ADDR);
                     mes->username = buf;
                     printf("USERNAME = %s\n", mes->username.c_str());
                     state++;
                     break;
                 case 2: // date_time
-                    buf.replace(0,string(MES_DATE_TIME).size(), "");
+                    ReplaceBuf(buf, MES_DATE_TIME);
                     mes->date_time = buf;
                     printf("DATE = %s\n", mes->date_time.c_str());
                     state++;
                     break;
                 case 3: // len
-                    buf.replace(0,string(MES_LEN).size(), "");
+                    ReplaceBuf(buf, MES_LEN);
                     mes->len = strtoul(buf.c_str(), NULL, 10);
                     size = mes->len;
                     printf("SIZE = %lu\n", mes->len);
                     state++;
                     break;
                 case 4: // state
-                    buf.replace(0,string(MES_STATE).size(), "");
+                    ReplaceBuf(buf, MES_STATE);
                     mes->state = strtoul(buf.c_str(), NULL, 10);
                     printf("STATE = %d\n", mes->state);
                     state++;
@@ -1010,7 +1015,6 @@ void ServerWorker::SendTo(const char* message) {
         {
             ss[i] = message[i - BUFSIZE];
         }
-        //ss += message;
         printf("String to send: %s\n", ss);
         res = send(socket, ss, size+BUFSIZE, 0);
         if (res != size + BUFSIZE)

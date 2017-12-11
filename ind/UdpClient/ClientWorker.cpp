@@ -58,9 +58,77 @@ void ClientWorker::StartThread(string* params)
         pthread_join(tHandle, NULL);
 }
 
-void ClientWorker::stopThread()
+void ClientWorker::StopThread()
 {
 	pthread_cancel(tHandle);
+}
+
+string Message::Serialize() 
+{
+    stringstream ss;
+    ss << id << DELIM_SERIALIZE;
+    ss << username << DELIM_SERIALIZE;
+    ss << date_time << DELIM_SERIALIZE;
+    ss << len << DELIM_SERIALIZE;
+    ss << state << DELIM_SERIALIZE;
+    std::replace(body.begin(), body.end(), DELIM_SERIALIZE, ' ');
+    ss << body << DELIM_SERIALIZE;
+    return ss.str();
+};
+
+void Message::Clear() 
+{
+    id = 0;
+    username = "";
+    date_time = "";
+    len = 0;
+    state = MSTATE_NORMAL;
+    body = "";
+};
+
+bool Message::Deserialize(const string& input) 
+{
+    bool res = true;
+    int numarg = 0;
+    string* args = NULL;
+    if (input.size() > 0) 
+    {
+        stringstream buf;
+        numarg = 0;
+        // find all delimeters
+        for (int i = 0; i < input.size(); i++) 
+        {
+            if (input[i] == DELIM_SERIALIZE)
+                numarg++;
+        }
+        // find all parts
+        if (numarg > 0) {
+            args = new string[numarg];
+            unsigned short cc = 0;
+            for (int i = 0; i < input.size(); i++) 
+            {
+                if (input[i] == DELIM_SERIALIZE) 
+                {
+                    args[cc] = buf.str();
+                    cc++;
+                    buf.str(std::string());
+                } else {
+                    buf << input[i];
+                }
+            }
+        }
+    }
+    if (numarg == MESSAGE_FIELDS_COUNT && args != NULL) 
+    {
+        id = strtoul(args[0].c_str(), NULL, 10);
+        username = args[1];
+        date_time = args[2];
+        len = strtoul(args[3].c_str(), NULL, 10);
+        state = atoi(args[4].c_str());
+        body = args[5];
+    } else
+        res = false;
+    return res;
 }
 
 void ClientWorker::ListenLoop(string host, unsigned short port)
@@ -241,13 +309,13 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			cin >> uname;
 			cout << "Sending the message. Enter the message to send: " << endl;
 			cin >> mes;
-			m.clear();
+			m.Clear();
 			m.body = mes;
 			if (uname.size() > 0)
 			{
 				string * bufs = new string[2];
 				bufs[0] = uname;
-				bufs[1] = m.serialize();
+				bufs[1] = m.Serialize();
 				SendTo(sockfd, Serialize(SND, 2, bufs));
 				delete[] bufs;
 				ListenRecv(sockfd, buf);
@@ -317,11 +385,11 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			printf("Smth went wrong [non existant state].");
 			getchar();
 		}
-                processRes(state, buf, m, mes);
+                ProcessRes(state, buf, m, mes);
 	}
 }
 
-void ClientWorker::processRes(short& state, const string& buf, Message& m, const string& mes)
+void ClientWorker::ProcessRes(short& state, const string& buf, Message& m, const string& mes)
 {
     unsigned int answerCode;
     unsigned short numArgCount;
@@ -448,7 +516,7 @@ void ClientWorker::processRes(short& state, const string& buf, Message& m, const
 					{
 						if (atoi(args[0].c_str()) == SERV_OK)
 						{
-							if (m.deserialize(args[1]))
+							if (m.Deserialize(args[1]))
 							{
 								m.body = mes;
 								cout << "Message successfully sent to user " << uname << endl;
@@ -554,7 +622,7 @@ void ClientWorker::processRes(short& state, const string& buf, Message& m, const
 					{
 						for (int i = 1; i < numArgCount; i++)
 						{
-							if (m.deserialize(args[i]))
+							if (m.Deserialize(args[i]))
 							{
 								cout << "Unread message with ID = " << m.id << endl;
 								cout << MessageToString(m) << endl;
@@ -595,7 +663,7 @@ void ClientWorker::processRes(short& state, const string& buf, Message& m, const
 					{
 						for (int i = 1; i < numArgCount; i++)
 						{
-							if (m.deserialize(args[i]))
+							if (m.Deserialize(args[i]))
 							{
 								cout << "Message with ID = " << m.id << endl;
 								cout << MessageToString(m) << endl;
@@ -634,7 +702,7 @@ void ClientWorker::processRes(short& state, const string& buf, Message& m, const
 					{
 						if (atoi(args[0].c_str()) == SERV_OK)
 						{
-							if (m.deserialize(args[1]))
+							if (m.Deserialize(args[1]))
 							{
 								cout << "Message with ID = " << m.id << endl;
 								cout << MessageToString(m) << endl;
@@ -672,7 +740,7 @@ void ClientWorker::processRes(short& state, const string& buf, Message& m, const
 					{
 						if (atoi(args[0].c_str()) == SERV_OK)
 						{
-							if (m.deserialize(args[1]))
+							if (m.Deserialize(args[1]))
 							{
 								cout << "Message successfully resent to user " << uname << endl;
 								cout << MessageToString(m) << endl;

@@ -16,6 +16,10 @@
 const char DELIM = ':';
 const short BUFSIZE = 10;
 
+static bool dr = false;
+static string uname;
+static int mesId = -1;
+
 using namespace std;
 
 class ClientWorker
@@ -32,6 +36,7 @@ public:
 	string Serialize(STATE opcode, unsigned short numarg, const string* ss);
 	STATE Parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);
+	void ProcessRes(short& state, const string& buf, Message& m, const string& mes);
 private:
 	void Run(string host, unsigned short port);
 	void ListenLoop(const int& socket);

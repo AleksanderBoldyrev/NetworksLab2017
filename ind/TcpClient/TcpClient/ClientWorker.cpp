@@ -149,18 +149,15 @@ void ClientWorker::ListenLoop(const int& socket)
 	bool isLogged = false;
 	string log;
 	string pass;
-	bool dr = false;
 	bool df = false;
 	bool ds = false;
 
 	string uname;
 	Message m;
 	string mes;
-	int mesId = -1;
 
 	while (1)
 	{
-		error = WSAGetLastError();
 		if (error != 0)
 		{
 			printf("Socket error: %d", error);
@@ -168,188 +165,90 @@ void ClientWorker::ListenLoop(const int& socket)
 		}
 		switch (state)
 		{
-		case STATE::START:
-			SendTo(socket, Serialize(STATE::START, 0, nullptr));
+		case START:
+			SendTo(socket, Serialize(START, 0, NULL));
 			ListenRecv(socket, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			if (answerCode != STATE::NO_OPERATION)
-			{
-				if (numArgCount > 0 && args != nullptr)
-				{
-					if (atoi(args[0].c_str()) == STATE::SERV_OK)
-					{
-						cout << "Connected to server successfully." << endl;
-						state = STATE::INIT;
-					}
-					else
-					{
-						cout << "Smth went wrong [stcmp]" << endl;
-						_getch();
-					}
-				}
-				else
-				{
-					cout << "Smth went wrong [numarg || args]" << endl;
-					_getch();
-				}
-			}
-			else
-			{
-				cout << "Smth went wrong [ansCode]" << endl;
-				_getch();
-			}
 			break;
-		case STATE::NO_OPERATION:
-			SendTo(socket, Serialize(STATE::NO_OPERATION, 0, nullptr));
+		case NO_OPERATION:
+			SendTo(socket, Serialize(NO_OPERATION, 0, NULL));
 			ListenRecv(socket, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			cout << "Enter a valid operation number.\n";
 			break;
-		case STATE::ANSWER:
+		case ANSWER:
 			cout << "Got the ANSWER message from server." << endl;
 			break;
-		case STATE::INIT:
+		case INIT:
 			df = false;
 			while (!df)
 			{
 				cout << "* MAIL *\n" << "Select the following items:\n" << "2 - Exit\n" << "3 - Register\n" << "4 - Login\n" << OPENT << endl;
-				short op; //= _getch() - (int)'0';
+				short op;
 				cin >> op;
 				df = true;
 				switch (op)
 				{
 				case 2:
-					state = STATE::EXIT;
+					state = EXIT;
 					break;
 				case 3:
-					state = STATE::REG;
+					state = REG;
 					break;
 				case 4:
-					state = STATE::LOG;
+					state = LOG;
 					break;
 				default:
 					df = false;
 					printf("Not valid operation number.");
-					_getch();
+					getchar();
 				}
 			}
+			continue;
 			break;
-		case STATE::OPCODE:
-
-			break;
-		case STATE::EXIT:
-			SendTo(socket, Serialize(STATE::EXIT, 0, nullptr));
+		case EXIT:
+			SendTo(socket, Serialize(EXIT, 0, NULL));
 			ListenRecv(socket, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			return;
 			break;
-		case STATE::REG:
-			dr = false;
-			while (!dr)
+		case REG:
+			cout << "You are about to sign up. Enter the <username>: ";
+			cin >> log;
+			cout << "Enter the <password>: ";
+			cin >> pass;
+			if (log.size() > 0 && pass.size() > 0)
 			{
-				cout << "You are about to sign up. Enter the <username>: ";
-				cin >> log;
-				cout << "Enter the <password>: ";
-				cin >> pass;
-				if (log.size() > 0 && pass.size() > 0)
-				{
-					string* bufs = new string[2];
-					bufs[0] = log;
-					bufs[1] = pass;
-					SendTo(socket, Serialize(STATE::REG, 2, bufs));
-					delete[] bufs;
-					ListenRecv(socket, buf);
-					answerCode = Parse(buf, numArgCount, args);
-					if (answerCode != STATE::NO_OPERATION)
-					{
-						if (numArgCount > 0 && args != nullptr)
-						{
-							if (atoi(args[0].c_str()) == STATE::SERV_OK)
-							{
-								dr = true;
-								state = STATE::INIT;
-								cout << "User created successfully. Press any key.\n" << endl;
-								_getch();
-							}
-							else
-							{
-								if (numArgCount > 1)
-								{
-									cout << "ERROR: while signing up" << args[1] << "]\n";
-								}
-								else cout << "Error while signing up.";
-							}
-						}
-					}
-					else
-					{
-						if (numArgCount > 0 && args != nullptr)
-							cout << "ERROR: while creating user err[" << args[0] << "]\n";
-						else cout << "Unknown error.\n";
-						_getch();
-					}
-				}
-				else
-				{
-					printf("Login or password missing.\n");
-					_getch();
-				}
+				string * bufs = new string[2];
+				bufs[0] = log;
+				bufs[1] = pass;
+				SendTo(socket, Serialize(REG, 2, bufs));
+				delete[] bufs;
+				ListenRecv(socket, buf);
+			}
+			else
+			{
+				printf("Login or password missing.\n");
+				getchar();
 			}
 			break;
-		case STATE::LOG:
+		case LOG:
 			dr = false;
-			while (!dr)
+			cout << "You are about to sign in. Enter the <username>: ";
+			cin >> log;
+			cout << "Enter the <password>: ";
+			cin >> pass;
+			if (log.size() > 0 && pass.size() > 0)
 			{
-				cout << "You are about to sign in. Enter the <username>: ";
-				cin >> log;
-				cout << "Enter the <password>: ";
-				cin >> pass;
-				if (log.size() > 0 && pass.size() > 0)
-				{
-					string* bufs = new string[2];
-					bufs[0] = log;
-					bufs[1] = pass;
-					SendTo(socket, Serialize(STATE::LOG, 2, bufs));
-					delete[] bufs;
-					ListenRecv(socket, buf);
-					answerCode = Parse(buf, numArgCount, args);
-					if (answerCode != STATE::NO_OPERATION)
-					{
-						if (numArgCount > 0 && args != nullptr)
-						{
-							if (atoi(args[0].c_str()) == STATE::SERV_OK)
-							{
-								dr = true;
-								state = STATE::INSYS;
-								cout << "User signed in successfully. Press any key.\n" << endl;
-								_getch();
-							}
-							else
-							{
-								if (numArgCount > 1)
-								{
-									cout << "ERROR: while signing in" << args[1] << "]\n";
-								}
-								else cout << "Error while signing in.";
-							}
-						}
-					}
-					else
-					{
-						if (numArgCount > 0 && args != nullptr)
-							cout << "ERROR: while logging in err[" << args[0] << "]\n";
-						else cout << "Unknown error.\n";
-						_getch();
-					}
-				}
-				else
-				{
-					printf("Login or password missing.\n");
-					_getch();
-				}
+				string * bufs = new string[2];
+				bufs[0] = log;
+				bufs[1] = pass;
+				SendTo(socket, Serialize(LOG, 2, bufs));
+				delete[] bufs;
+				ListenRecv(socket, buf);
+			}
+			else
+			{
+				printf("Login or password missing.\n");
+				getchar();
 			}
 			break;
-		case STATE::INSYS:
+		case INSYS:
 			ds = false;
 			while (!ds)
 			{
@@ -360,56 +259,49 @@ void ClientWorker::ListenLoop(const int& socket)
 				switch (op)
 				{
 				case 1:
-					state = STATE::SND;
+					state = SND;
 					break;
 				case 2:
-					state = STATE::EXIT;
+					state = EXIT;
 					break;
 				case 3:
-					state = STATE::REG;
+					state = REG;
 					break;
 				case 4:
-					state = STATE::LOGOUT;
+					state = LOGOUT;
 					break;
 				case 5:
-					state = STATE::DEL_US;
+					state = DEL_US;
 					break;
 				case 6:
-					state = STATE::SH_UNR;
+					state = SH_UNR;
 					break;
 				case 7:
-					state = STATE::SH_ALL;
+					state = SH_ALL;
 					break;
 				case 8:
-					state = STATE::SH_EX;
+					state = SH_EX;
 					break;
 				case 9:
-					state = STATE::DEL_MES;
+					state = DEL_MSG;
 					break;
 				case 10:
-					state = STATE::RSND;
+					state = RSND;
 					break;
 				default:
 					ds = false;
 					printf("Not valid operation number.");
-					_getch();
+					getchar();
 				}
 			}
+			continue;
 			break;
-		case STATE::LOGOUT:
+		case LOGOUT:
 			cout << "Logging out.\n" << endl;
-			SendTo(socket, Serialize(STATE::LOGOUT, 0, nullptr));
+			SendTo(socket, Serialize(LOGOUT, 0, NULL));
 			ListenRecv(socket, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			if (atoi(args[0].c_str()) == STATE::SERV_OK)
-			{
-				cout << "Log out successfully. Press any key." << endl;
-				state = STATE::INIT;
-			}
-			else cout << "Error while logging out. Press any key." << endl;
-			_getch();
 			break;
-		case STATE::SND:
+		case SND:
 			cout << "Sending the message. Enter the username of the user you would like to send: " << endl;
 			cin >> uname;
 			cout << "Sending the message. Enter the message to send: " << endl;
@@ -418,87 +310,20 @@ void ClientWorker::ListenLoop(const int& socket)
 			m.body = mes;
 			if (uname.size() > 0)
 			{
-				string* bufs = new string[2];
+				string * bufs = new string[2];
 				bufs[0] = uname;
 				bufs[1] = m.Serialize();
-				SendTo(socket, Serialize(STATE::SND, 2, bufs));
+				SendTo(socket, Serialize(SND, 2, bufs));
 				delete[] bufs;
 				ListenRecv(socket, buf);
-				answerCode = Parse(buf, numArgCount, args);
-				if (answerCode != STATE::NO_OPERATION)
-				{
-					if (numArgCount > 0 && args != nullptr)
-					{
-						if (atoi(args[0].c_str()) == STATE::SERV_OK)
-						{
-							if (m.Deserialize(args[1]))
-							{
-								m.body = mes;
-								cout << "Message successfully sent to user " << uname << endl;
-								cout << MessageToString(m) << endl;
-								cout << "\nPress any key." << endl;
-								state = STATE::INSYS;
-								_getch();
-							}
-						}
-						else
-						{
-							if (numArgCount > 1)
-							{
-								cout << "ERROR: while sending [" << args[1] << "]\n";
-							}
-							else cout << "Error while sending.";
-							state = STATE::INSYS;
-						}
-					}
-				}
-				else
-				{
-					if (numArgCount > 0 && args != nullptr)
-						cout << "ERROR: while sending err[" << args[0] << "]\n";
-					else cout << "Unknown error.\n";
-					state = STATE::INSYS;
-					_getch();
-				}
 			}
 			break;
-		case STATE::DEL_US:
+		case DEL_US:
 			cout << "Deleting user." << endl;
-			SendTo(socket, Serialize(STATE::DEL_US, 0, nullptr));
+			SendTo(socket, Serialize(DEL_US, 0, NULL));
 			ListenRecv(socket, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			if (answerCode != STATE::NO_OPERATION)
-			{
-				if (numArgCount > 0 && args != nullptr)
-				{
-					if (atoi(args[0].c_str()) == STATE::SERV_OK)
-					{
-						cout << "User <" << args[1] << "> deleted successfully." << endl;
-						cout << "\nPress any key." << endl;
-						state = STATE::INIT;
-						_getch();
-					}
-					else
-					{
-						if (numArgCount > 1)
-						{
-							cout << "ERROR: while deleting [" << args[1] << "]\n";
-						}
-						else cout << "Error while deleting.";
-						state = STATE::INSYS;
-					}
-				}
-			}
-			else
-			{
-				if (numArgCount > 0 && args != nullptr)
-					cout << "ERROR: while deleting err[" << args[0] << "]\n";
-				else cout << "Unknown error.\n";
-				state = STATE::INSYS;
-				_getch();
-			}
 			break;
-		case STATE::DEL_MES:
+		case DEL_MSG:
 			cout << "Deleting message." << endl;
 			cout << "Enter the message ID which you would like to delete:" << endl;
 			cin >> mesId;
@@ -508,130 +333,21 @@ void ClientWorker::ListenLoop(const int& socket)
 				string bufs[1];
 				sss << mesId;
 				bufs[0] = sss.str();
-				SendTo(socket, Serialize(STATE::DEL_MES, 1, bufs));
+				SendTo(socket, Serialize(DEL_MSG, 1, bufs));
 				ListenRecv(socket, buf);
-				answerCode = Parse(buf, numArgCount, args);
-				if (answerCode != STATE::NO_OPERATION)
-				{
-					if (numArgCount > 0 && args != nullptr)
-					{
-						if (atoi(args[0].c_str()) == STATE::SERV_OK)
-						{
-							cout << "Message <" << mesId << "> deleted successfully." << endl;
-							cout << "\nPress any key." << endl;
-							state = STATE::INSYS;
-							_getch();
-						}
-						else
-						{
-							if (numArgCount > 1)
-							{
-								cout << "ERROR: while deleting [" << args[1] << "]\n";
-							}
-							else cout << "Error while deleting.";
-							state = STATE::INSYS;
-						}
-					}
-				}
-				else
-				{
-					if (numArgCount > 0 && args != nullptr)
-						cout << "ERROR: while deleting err[" << args[0] << "]\n";
-					else cout << "Unknown error.\n";
-					state = STATE::INSYS;
-					_getch();
-				}
 			}
 			break;
-		case STATE::SH_UNR:
+		case SH_UNR:
 			cout << "Showing unread messages." << endl;
-			SendTo(socket, Serialize(STATE::SH_UNR, 0, nullptr));
+			SendTo(socket, Serialize(SH_UNR, 0, NULL));
 			ListenRecv(socket, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			if (answerCode != STATE::NO_OPERATION)
-			{
-				if (numArgCount > 0 && args != nullptr)
-				{
-					if (atoi(args[0].c_str()) == STATE::SERV_OK)
-					{
-						for (int i = 1; i < numArgCount; i++)
-						{
-							if (m.Deserialize(args[i]))
-							{
-								cout << "Unread message with ID = " << m.id << endl;
-								cout << MessageToString(m) << endl;
-							}
-						}
-						cout << "\nPress any key." << endl;
-						state = STATE::INSYS;
-						_getch();
-
-					}
-					else
-					{
-						if (numArgCount > 1)
-						{
-							cout << "ERROR: while showing unread messages [" << args[1] << "]\n";
-						}
-						else cout << "Error while showing unread messages.";
-						state = STATE::INSYS;
-					}
-				}
-			}
-			else
-			{
-				if (numArgCount > 0 && args != nullptr)
-					cout << "ERROR: while showing unread messages err[" << args[0] << "]\n";
-				else cout << "Unknown error.\n";
-				state = STATE::INSYS;
-				_getch();
-			}
 			break;
-		case STATE::SH_ALL:
+		case SH_ALL:
 			cout << "Showing all messages." << endl;
-			SendTo(socket, Serialize(STATE::SH_ALL, 0, nullptr));
+			SendTo(socket, Serialize(SH_ALL, 0, NULL));
 			ListenRecv(socket, buf);
-			answerCode = Parse(buf, numArgCount, args);
-			if (answerCode != STATE::NO_OPERATION)
-			{
-				if (numArgCount > 0 && args != nullptr)
-				{
-					if (atoi(args[0].c_str()) == STATE::SERV_OK)
-					{
-						for (int i = 1; i < numArgCount; i++)
-						{
-							if (m.Deserialize(args[i]))
-							{
-								cout << "Message with ID = " << m.id << endl;
-								cout << MessageToString(m) << endl;
-							}
-						}
-						cout << "\nPress any key." << endl;
-						state = STATE::INSYS;
-						_getch();
-
-					}
-					else
-					{
-						if (numArgCount > 1)
-						{
-							cout << "ERROR: while showing all messages [" << args[1] << "]\n";
-						}
-						else cout << "Error while showing all messages.";
-						state = STATE::INSYS;
-					}
-				}
-			}
-			else
-			{
-				if (numArgCount > 0 && args != nullptr)
-					cout << "ERROR: while showing unread messages err[" << args[0] << "]\n";
-				else cout << "Unknown error.\n";
-				state = STATE::INSYS;
-				_getch();
-			}
 			break;
-		case STATE::SH_EX:
+		case SH_EX:
 			cout << "Showing the exact message." << endl;
 			cout << "Enter the message ID which you would like to get: " << endl;
 			cin >> mesId;
@@ -641,47 +357,11 @@ void ClientWorker::ListenLoop(const int& socket)
 				string bufs[1];
 				sss << mesId;
 				bufs[0] = sss.str();
-				SendTo(socket, Serialize(STATE::SH_EX, 1, bufs));
+				SendTo(socket, Serialize(SH_EX, 1, bufs));
 				ListenRecv(socket, buf);
-				answerCode = Parse(buf, numArgCount, args);
-				if (answerCode != STATE::NO_OPERATION)
-				{
-					if (numArgCount > 0 && args != nullptr)
-					{
-						if (atoi(args[0].c_str()) == STATE::SERV_OK)
-						{
-							if (m.Deserialize(args[1]))
-							{
-								cout << "Message with ID = " << m.id << endl;
-								cout << MessageToString(m) << endl;
-							}
-							cout << "\nPress any key." << endl;
-							state = STATE::INSYS;
-							_getch();
-
-						}
-						else
-						{
-							if (numArgCount > 1)
-							{
-								cout << "ERROR: while showing unread messages [" << args[1] << "]\n";
-							}
-							else cout << "Error while showing unread messages.";
-							state = STATE::INSYS;
-						}
-					}
-				}
-				else
-				{
-					if (numArgCount > 0 && args != nullptr)
-						cout << "ERROR: while showing unread messages err[" << args[0] << "]\n";
-					else cout << "Unknown error.\n";
-					state = STATE::INSYS;
-					_getch();
-				}
 			}
 			break;
-		case STATE::RSND:
+		case RSND:
 			cout << "Resending the exact message." << endl;
 			cout << "Resending the message. Enter the username of the user you would like to send: " << endl;
 			cin >> uname;
@@ -694,46 +374,400 @@ void ClientWorker::ListenLoop(const int& socket)
 				sss << mesId;
 				bufs[0] = sss.str();
 				bufs[1] = uname;
-				SendTo(socket, Serialize(STATE::RSND, 2, bufs));
+				SendTo(socket, Serialize(RSND, 2, bufs));
 				ListenRecv(socket, buf);
-				answerCode = Parse(buf, numArgCount, args);
-				if (answerCode != STATE::NO_OPERATION)
-				{
-					if (numArgCount > 1 && args != nullptr)
-					{
-						if (atoi(args[0].c_str()) == STATE::SERV_OK)
-						{
-							if (m.Deserialize(args[1]))
-							{
-								cout << "Message successfully resent to user " << uname << endl;
-								cout << MessageToString(m) << endl;
-								cout << "\nPress any key." << endl;
-								state = STATE::INSYS;
-								_getch();
-							}
-						}
-						else
-						{
-							cout << "ERROR: while resending [" << args[1] << "]\n";
-							state = STATE::INSYS;
-						}
-					}
-				}
-				else
-				{
-					if (numArgCount > 0 && args != nullptr)
-						cout << "ERROR: while resending err[" << args[0] << "]\n";
-					else cout << "Unknown error.\n";
-					_getch();
-				}
 			}
 			break;
 		default:
 			printf("Smth went wrong [non existant state].");
-			_getch();
+			getchar();
 		}
+		ProcessRes(state, buf, m, mes);
 	}
 }
+
+void ClientWorker::ProcessRes(short& state, const string& buf, Message& m, const string& mes)
+{
+	unsigned int answerCode;
+	unsigned short numArgCount;
+	string* args = NULL;
+
+	switch (state)
+	{
+	case START:
+		answerCode = Parse(buf, numArgCount, args);
+		if (answerCode != NO_OPERATION)
+		{
+			if (numArgCount > 0 && args != NULL)
+			{
+				if (atoi(args[0].c_str()) == SERV_OK)
+				{
+					cout << "Connected to server successfully." << endl;
+					state = INIT;
+					getchar();
+				}
+				else
+				{
+					cout << "Smth went wrong [stcmp]" << endl;
+					getchar();
+				}
+			}
+			else
+			{
+				cout << "Smth went wrong [numarg || args]" << endl;
+				getchar();
+			}
+		}
+		else
+		{
+			cout << "Smth went wrong [ansCode]" << endl;
+			getchar();
+		}
+		break;
+	case NO_OPERATION:
+		answerCode = Parse(buf, numArgCount, args);
+		cout << "Enter a valid operation number.\n";
+		break;
+	case ANSWER:
+		cout << "Got the ANSWER message from server." << endl;
+		break;
+	case EXIT:
+		answerCode = Parse(buf, numArgCount, args);
+		return;
+		break;
+	case REG:
+		answerCode = Parse(buf, numArgCount, args);
+		if (answerCode != NO_OPERATION)
+		{
+			if (numArgCount > 0 && args != NULL)
+			{
+				if (atoi(args[0].c_str()) == SERV_OK)
+				{
+					state = INIT;
+					cout << "User created successfully. Press any key.\n" << endl;
+					getchar();
+				}
+				else
+				{
+					if (numArgCount > 1)
+					{
+						cout << "ERROR: while signing up" << args[1] << "]\n";
+					}
+					else cout << "Error while signing up.";
+				}
+			}
+		}
+		else
+		{
+			if (numArgCount > 0 && args != NULL)
+				cout << "ERROR: while creating user err[" << args[0] << "]\n";
+			else cout << "Unknown error.\n";
+			getchar();
+		}
+		break;
+	case LOG:
+		answerCode = Parse(buf, numArgCount, args);
+		if (answerCode != NO_OPERATION)
+		{
+			if (numArgCount > 0 && args != NULL)
+			{
+				if (atoi(args[0].c_str()) == SERV_OK)
+				{
+					state = INSYS;
+					cout << "User signed in successfully. Press any key.\n" << endl;
+					getchar();
+				}
+				else
+				{
+					if (numArgCount > 1)
+					{
+						cout << "ERROR: while signing in" << args[1] << "]\n";
+					}
+					else cout << "Error while signing in.";
+				}
+			}
+		}
+		else
+		{
+			if (numArgCount > 0 && args != NULL)
+				cout << "ERROR: while logging in err[" << args[0] << "]\n";
+			else cout << "Unknown error.\n";
+			getchar();
+		}
+		break;
+	case LOGOUT:
+		answerCode = Parse(buf, numArgCount, args);
+		if (atoi(args[0].c_str()) == SERV_OK)
+		{
+			cout << "Log out successfully. Press any key." << endl;
+			state = INIT;
+		}
+		else cout << "Error while logging out. Press any key." << endl;
+		getchar();
+		break;
+	case SND:
+		answerCode = Parse(buf, numArgCount, args);
+		if (answerCode != NO_OPERATION)
+		{
+			if (numArgCount > 0 && args != NULL)
+			{
+				if (atoi(args[0].c_str()) == SERV_OK)
+				{
+					if (m.Deserialize(args[1]))
+					{
+						m.body = mes;
+						cout << "Message successfully sent to user " << uname << endl;
+						cout << MessageToString(m) << endl;
+						cout << "\nPress any key." << endl;
+						state = INSYS;
+						getchar();
+					}
+				}
+				else
+				{
+					if (numArgCount > 1)
+					{
+						cout << "ERROR: while sending [" << args[1] << "]\n";
+					}
+					else cout << "Error while sending.";
+					state = INSYS;
+				}
+			}
+		}
+		else
+		{
+			if (numArgCount > 0 && args != NULL)
+				cout << "ERROR: while sending err[" << args[0] << "]\n";
+			else cout << "Unknown error.\n";
+			state = INSYS;
+			getchar();
+		}
+		break;
+	case DEL_US:
+		answerCode = Parse(buf, numArgCount, args);
+		if (answerCode != NO_OPERATION)
+		{
+			if (numArgCount > 0 && args != NULL)
+			{
+				if (atoi(args[0].c_str()) == SERV_OK)
+				{
+					cout << "User <" << uname << "> deleted successfully." << endl;
+					cout << "\nPress any key." << endl;
+					state = INIT;
+					getchar();
+				}
+				else
+				{
+					if (numArgCount > 1)
+					{
+						cout << "ERROR: while deleting [" << args[1] << "]\n";
+					}
+					else cout << "Error while deleting.";
+					state = INSYS;
+				}
+			}
+		}
+		else
+		{
+			if (numArgCount > 0 && args != NULL)
+				cout << "ERROR: while deleting err[" << args[0] << "]\n";
+			else cout << "Unknown error.\n";
+			state = INSYS;
+			getchar();
+		}
+		break;
+	case DEL_MSG:
+		answerCode = Parse(buf, numArgCount, args);
+		if (answerCode != NO_OPERATION)
+		{
+			if (numArgCount > 0 && args != NULL)
+			{
+				if (atoi(args[0].c_str()) == SERV_OK)
+				{
+					cout << "Message <" << mesId << "> deleted successfully." << endl;
+					cout << "\nPress any key." << endl;
+					state = INSYS;
+					getchar();
+				}
+				else
+				{
+					if (numArgCount > 1)
+					{
+						cout << "ERROR: while deleting [" << args[1] << "]\n";
+					}
+					else cout << "Error while deleting.";
+					state = INSYS;
+				}
+			}
+		}
+		else
+		{
+			if (numArgCount > 0 && args != NULL)
+				cout << "ERROR: while deleting err[" << args[0] << "]\n";
+			else cout << "Unknown error.\n";
+			state = INSYS;
+			getchar();
+		}
+		break;
+	case SH_UNR:
+		answerCode = Parse(buf, numArgCount, args);
+		if (answerCode != NO_OPERATION)
+		{
+			if (numArgCount > 0 && args != NULL)
+			{
+				if (atoi(args[0].c_str()) == SERV_OK)
+				{
+					for (int i = 1; i < numArgCount; i++)
+					{
+						if (m.Deserialize(args[i]))
+						{
+							cout << "Unread message with ID = " << m.id << endl;
+							cout << MessageToString(m) << endl;
+						}
+					}
+					cout << "\nPress any key." << endl;
+					state = INSYS;
+					getchar();
+
+				}
+				else
+				{
+					if (numArgCount > 1)
+					{
+						cout << "ERROR: while showing unread messages [" << args[1] << "]\n";
+					}
+					else cout << "Error while showing unread messages.";
+					state = INSYS;
+				}
+			}
+		}
+		else
+		{
+			if (numArgCount > 0 && args != NULL)
+				cout << "ERROR: while showing unread messages err[" << args[0] << "]\n";
+			else cout << "Unknown error.\n";
+			state = INSYS;
+			getchar();
+		}
+		break;
+	case SH_ALL:
+		answerCode = Parse(buf, numArgCount, args);
+		if (answerCode != NO_OPERATION)
+		{
+			if (numArgCount > 0 && args != NULL)
+			{
+				if (atoi(args[0].c_str()) == SERV_OK)
+				{
+					for (int i = 1; i < numArgCount; i++)
+					{
+						if (m.Deserialize(args[i]))
+						{
+							cout << "Message with ID = " << m.id << endl;
+							cout << MessageToString(m) << endl;
+						}
+					}
+					cout << "\nPress any key." << endl;
+					state = INSYS;
+					getchar();
+
+				}
+				else
+				{
+					if (numArgCount > 1)
+					{
+						cout << "ERROR: while showing all messages [" << args[1] << "]\n";
+					}
+					else cout << "Error while showing all messages.";
+					state = INSYS;
+				}
+			}
+		}
+		else
+		{
+			if (numArgCount > 0 && args != NULL)
+				cout << "ERROR: while showing unread messages err[" << args[0] << "]\n";
+			else cout << "Unknown error.\n";
+			state = INSYS;
+			getchar();
+		}
+		break;
+	case SH_EX:
+		answerCode = Parse(buf, numArgCount, args);
+		if (answerCode != NO_OPERATION)
+		{
+			if (numArgCount > 0 && args != NULL)
+			{
+				if (atoi(args[0].c_str()) == SERV_OK)
+				{
+					if (m.Deserialize(args[1]))
+					{
+						cout << "Message with ID = " << m.id << endl;
+						cout << MessageToString(m) << endl;
+					}
+					cout << "\nPress any key." << endl;
+					state = INSYS;
+					getchar();
+
+				}
+				else
+				{
+					if (numArgCount > 1)
+					{
+						cout << "ERROR: while showing unread messages [" << args[1] << "]\n";
+					}
+					else cout << "Error while showing unread messages.";
+					state = INSYS;
+				}
+			}
+		}
+		else
+		{
+			if (numArgCount > 0 && args != NULL)
+				cout << "ERROR: while showing unread messages err[" << args[0] << "]\n";
+			else cout << "Unknown error.\n";
+			state = INSYS;
+			getchar();
+		}
+		break;
+	case RSND:
+		answerCode = Parse(buf, numArgCount, args);
+		if (answerCode != NO_OPERATION)
+		{
+			if (numArgCount > 1 && args != NULL)
+			{
+				if (atoi(args[0].c_str()) == SERV_OK)
+				{
+					if (m.Deserialize(args[1]))
+					{
+						cout << "Message successfully resent to user " << uname << endl;
+						cout << MessageToString(m) << endl;
+						cout << "\nPress any key." << endl;
+						state = INSYS;
+						getchar();
+					}
+				}
+				else
+				{
+					cout << "ERROR: while resending [" << args[1] << "]\n";
+					state = INSYS;
+				}
+			}
+		}
+		else
+		{
+			if (numArgCount > 0 && args != NULL)
+				cout << "ERROR: while resending err[" << args[0] << "]\n";
+			else cout << "Unknown error.\n";
+			getchar();
+		}
+		break;
+	default:
+		printf("Smth went wrong [non existant state].");
+		getchar();
+	}
+}
+
+
 
 string ClientWorker::MessageToString(const Message& m)
 {
