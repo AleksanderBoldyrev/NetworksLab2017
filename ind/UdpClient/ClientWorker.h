@@ -8,12 +8,9 @@
 
 #include <netdb.h>
 #include <stdlib.h>
-//#include <winsock2.h>
-//#include <windows.h>
 #include <stdio.h>
 #include <iostream>
 #include <stdint.h>
-//#include <conio.h>
 #include <string>
 #include <sstream> 
 #include <algorithm>
@@ -22,23 +19,9 @@
 #pragma "lpthread.lib"
 
 #include <pthread.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <stdlib.h>
-//#include <cstdlib>
-#include <stdio.h>
 #include <math.h>
-#include <vector>
-#include <list>
-#include <map>
 #include <signal.h>
 #include <assert.h>
-#include <string>
-#include <sstream> 
-#include <string.h>
 #include <sys/stat.h>
 #include <semaphore.h>
 #include <fcntl.h>
@@ -51,6 +34,8 @@ const char DELIM = ':';
 static bool dr = false;
 static string uname;
 static int mesId = -1;
+
+const short STRING_BUFFER_SIZE = 1024;
 
 using namespace std;
 
@@ -65,8 +50,6 @@ public:
 	static void* HandleThread(void* args);
 	void SendTo(int s, const string& message);
 	bool ListenRecv(int s, std::string& MsgStr);
-        //void SendTo(int s, const char* message);
-	//bool ListenRecv(int s, char* &MsgStr);
 	string Serialize(unsigned int opcode, unsigned short numarg, const string* ss);
 	STATE Parse(const string& input, unsigned short& numarg, string* &args);
 	string MessageToString(const Message& m);

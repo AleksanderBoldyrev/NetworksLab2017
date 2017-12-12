@@ -15,6 +15,7 @@
 
 const char DELIM = ':';
 const short BUFSIZE = 10;
+const short STRING_BUFFER_SIZE = 1024;
 
 static bool dr = false;
 static string uname;

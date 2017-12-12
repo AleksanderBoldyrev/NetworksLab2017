@@ -146,17 +146,25 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
         
 	short state = 0;
 	int error = 0;
+	int c = 0;
 	state = START;
-	string buf;
-	
+	char* buf;
+	unsigned int answerCode;
+	unsigned short numArgCount;
+	string* args = NULL;
+
+	bool isLogged = false;
 	string log;
 	string pass;
-
 	bool df = false;
 	bool ds = false;
 
+	string uname;
 	Message m;
 	string mes;
+
+	string* bufs = new string[STRING_BUFFER_SIZE];
+	int argsCount = 0;
 
 	while (1)
 	{
@@ -168,15 +176,7 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 		switch (state)
 		{
 		case START:
-			SendTo(sockfd, Serialize(START, 0, NULL));
-			ListenRecv(sockfd, buf);
-			break;
-		case NO_OPERATION:
-			SendTo(sockfd, Serialize(NO_OPERATION, 0, NULL));
-			ListenRecv(sockfd, buf);
-			break;
-		case ANSWER:
-			cout << "Got the ANSWER message from server." << endl;
+			cout << "Starting the application...\n";
 			break;
 		case INIT:
 			df = false;
@@ -203,52 +203,45 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					getchar();
 				}
 			}
-                        continue;
+			continue;
 			break;
 		case EXIT:
-			SendTo(sockfd, Serialize(EXIT, 0, NULL));
-			ListenRecv(sockfd, buf);
+			cout << "Exiting...\n";
 			break;
 		case REG:
-				cout << "You are about to sign up. Enter the <username>: ";
-				cin >> log;
-				cout << "Enter the <password>: ";
-				cin >> pass;
-				if (log.size() > 0 && pass.size() > 0)
-				{
-					string * bufs = new string[2];
-					bufs[0] = log;
-					bufs[1] = pass;
-					SendTo(sockfd, Serialize(REG, 2, bufs));
-					ListenRecv(sockfd, buf);
-					delete[] bufs;
-				}
-				else
-				{
-					printf("Login or password missing.\n");
-					getchar();
-				}
+			cout << "You are about to sign up. Enter the <username>: ";
+			cin >> log;
+			cout << "Enter the <password>: ";
+			cin >> pass;
+			if (log.size() > 0 && pass.size() > 0)
+			{
+				argsCount = 2;
+				bufs[0] = log;
+				bufs[1] = pass;
+			}
+			else
+			{
+				printf("Login or password missing.\n");
+				getchar();
+			}
 			break;
 		case LOG:
 			dr = false;
-				cout << "You are about to sign in. Enter the <username>: ";
-				cin >> log;
-				cout << "Enter the <password>: ";
-				cin >> pass;
-				if (log.size() > 0 && pass.size() > 0)
-				{
-					string * bufs = new string[2];
-					bufs[0] = log;
-					bufs[1] = pass;
-					SendTo(sockfd, Serialize(LOG, 2, bufs));
-					ListenRecv(sockfd, buf);
-                                        delete[] bufs;
-				}
-				else
-				{
-					printf("Login or password missing.\n");
-					getchar();
-				}
+			cout << "You are about to sign in. Enter the <username>: ";
+			cin >> log;
+			cout << "Enter the <password>: ";
+			cin >> pass;
+			if (log.size() > 0 && pass.size() > 0)
+			{
+				argsCount = 2;
+				bufs[0] = log;
+				bufs[1] = pass;
+			}
+			else
+			{
+				printf("Login or password missing.\n");
+				getchar();
+			}
 			break;
 		case INSYS:
 			ds = false;
@@ -296,12 +289,10 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 					getchar();
 				}
 			}
-                        continue;
+			continue;
 			break;
 		case LOGOUT:
 			cout << "Logging out.\n" << endl;
-			SendTo(sockfd, Serialize(LOGOUT, 0, NULL));
-			ListenRecv(sockfd, buf);
 			break;
 		case SND:
 			cout << "Sending the message. Enter the username of the user you would like to send: " << endl;
@@ -312,18 +303,13 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			m.body = mes;
 			if (uname.size() > 0)
 			{
-				string * bufs = new string[2];
+				argsCount = 2;
 				bufs[0] = uname;
 				bufs[1] = m.Serialize();
-				SendTo(sockfd, Serialize(SND, 2, bufs));
-				ListenRecv(sockfd, buf);
-				delete[] bufs;
 			}
 			break;
 		case DEL_US:
 			cout << "Deleting user." << endl;
-			SendTo(sockfd, Serialize(DEL_US, 0, NULL));
-			ListenRecv(sockfd, buf);
 			break;
 		case DEL_MSG:
 			cout << "Deleting message." << endl;
@@ -332,22 +318,16 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			if (mesId > 0)
 			{
 				stringstream sss;
-				string bufs[1];
 				sss << mesId;
 				bufs[0] = sss.str();
-				SendTo(sockfd, Serialize(DEL_MSG, 1, bufs));
-				ListenRecv(sockfd, buf);
+				argsCount = 1;
 			}
 			break;
 		case SH_UNR:
 			cout << "Showing unread messages." << endl;
-			SendTo(sockfd, Serialize(SH_UNR, 0, NULL));
-			ListenRecv(sockfd, buf);
 			break;
 		case SH_ALL:
 			cout << "Showing all messages." << endl;
-			SendTo(sockfd, Serialize(SH_ALL, 0, NULL));
-			ListenRecv(sockfd, buf);
 			break;
 		case SH_EX:
 			cout << "Showing the exact message." << endl;
@@ -356,11 +336,9 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			if (mesId > 0)
 			{
 				stringstream sss;
-				string bufs[1];
 				sss << mesId;
 				bufs[0] = sss.str();
-				SendTo(sockfd, Serialize(SH_EX, 1, bufs));
-				ListenRecv(sockfd, buf);
+				argsCount = 1;
 			}
 			break;
 		case RSND:
@@ -372,19 +350,25 @@ void ClientWorker::ListenLoop(string host, unsigned short port)
 			if (uname.size() > 0)
 			{
 				stringstream sss;
-				string bufs[2];
+				
 				sss << mesId;
 				bufs[0] = sss.str();
 				bufs[1] = uname;
-				SendTo(sockfd, Serialize(RSND, 2, bufs));
-				ListenRecv(sockfd, buf);
+				argsCount = 2;
 			}
 			break;
 		default:
 			printf("Smth went wrong [non existant state].");
 			getchar();
 		}
-                ProcessRes(state, buf, m, mes);
+		if (state == INSYS || state == INIT) continue;
+		else
+		{
+			SendTo(sockfd, Serialize((STATE)state, argsCount, bufs).c_str());
+			if (bufs != NULL) delete[] bufs;
+			ListenRecv(sockfd, string(buf));
+		}
+		ProcessRes(state, buf, m, mes);
 	}
 }
 
